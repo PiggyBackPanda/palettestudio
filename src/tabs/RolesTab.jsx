@@ -1,8 +1,6 @@
 import BrandPreview from '../components/BrandPreview';
 import RoleRow from '../components/RoleRow';
 import { ROLE_DESC } from '../utils/autoRoles';
-import { inferPersonality } from '../utils/inferPersonality';
-import { hexToRgb, rgbToHsl } from '../utils/colourMath';
 
 function ProportionBar({ colors, roles }) {
   const heroHex = Object.keys(roles).find(k => roles[k] === 'Hero');
@@ -74,87 +72,6 @@ function ProportionBar({ colors, roles }) {
   );
 }
 
-function PersonalityPanel({ colors }) {
-  if (!colors.length) return null;
-  const { r, g, b } = hexToRgb(colors[0]);
-  const { s } = rgbToHsl(r, g, b);
-  const hi = colors.reduce((m, h) => {
-    const { r: rr, g: gg, b: bb } = hexToRgb(h);
-    const { s: ss } = rgbToHsl(rr, gg, bb);
-    return ss > s ? h : m;
-  }, colors[0]);
-  const p = inferPersonality(hi);
-
-  return (
-    <div
-      style={{
-        background:   'var(--ps-bg-subtle)',
-        border:       '1px solid var(--ps-border)',
-        borderRadius: 'var(--ps-radius-lg)',
-        padding:      '12px 16px',
-        marginBottom: 20,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div
-          style={{
-            width:        22,
-            height:       22,
-            borderRadius: 'var(--ps-radius-sm)',
-            background:   hi,
-            border:       '1px solid rgba(0,0,0,.1)',
-            flexShrink:   0,
-          }}
-        />
-        <div>
-          <div
-            style={{
-              fontFamily:    'var(--ps-font-ui)',
-              fontSize:      'var(--ps-text-sm)',
-              fontWeight:    600,
-              color:         'var(--ps-text-primary)',
-              letterSpacing: '.02em',
-            }}
-          >
-            {p.trait}
-          </div>
-          <div
-            style={{
-              fontFamily: 'var(--ps-font-ui)',
-              fontSize:   'var(--ps-text-xs)',
-              color:      'var(--ps-text-secondary)',
-            }}
-          >
-            {p.psychProfile}
-          </div>
-        </div>
-      </div>
-      <p
-        style={{
-          fontFamily: 'var(--ps-font-ui)',
-          fontSize:   'var(--ps-text-xs)',
-          color:      'var(--ps-text-secondary)',
-          lineHeight: 1.55,
-          margin:     '8px 0 4px',
-        }}
-      >
-        {p.desc}
-      </p>
-      {p.example && (
-        <div
-          style={{
-            fontFamily: 'var(--ps-font-ui)',
-            fontSize:   'var(--ps-text-xs)',
-            color:      'var(--ps-accent)',
-            fontWeight: 600,
-          }}
-        >
-          Similar to: {p.example}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function RolesTab({ colors, roles, autoReasons, onSetRole, onChooseForMe, onClearRoles }) {
   const rolesByHex    = Object.keys(roles);
@@ -267,8 +184,6 @@ export default function RolesTab({ colors, roles, autoReasons, onSetRole, onChoo
         ))}
       </div>
 
-      {/* Personality */}
-      <PersonalityPanel colors={colors} />
 
       {/* Proportion bar */}
       <ProportionBar colors={colors} roles={roles} />

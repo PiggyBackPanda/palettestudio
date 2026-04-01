@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { inferPersonality } from '../utils/inferPersonality';
 import { hexToRgb, rgbToHsl } from '../utils/colourMath';
 import { getColourName } from '../utils/colourNames';
 
@@ -19,20 +18,14 @@ function relativeTime(isoString) {
 function defaultName(colors) {
   if (!colors || colors.length === 0) return 'My Palette';
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-  try {
-    const trait = inferPersonality(colors[0]).trait.split(' / ')[0];
-    return `${adj} ${trait}`;
-  } catch {
-    // inferPersonality unavailable — use colour name of dominant colour (highest saturation)
-    const dominant = colors.reduce((best, hex) => {
-      const { r, g, b }   = hexToRgb(hex);
-      const { s }         = rgbToHsl(r, g, b);
-      const { r: br, g: bg2, b: bb } = hexToRgb(best);
-      const { s: bs }     = rgbToHsl(br, bg2, bb);
-      return s > bs ? hex : best;
-    }, colors[0]);
-    return `${adj} ${getColourName(dominant)}`;
-  }
+  const dominant = colors.reduce((best, hex) => {
+    const { r, g, b }          = hexToRgb(hex);
+    const { s }                = rgbToHsl(r, g, b);
+    const { r: br, g: bg2, b: bb } = hexToRgb(best);
+    const { s: bs }            = rgbToHsl(br, bg2, bb);
+    return s > bs ? hex : best;
+  }, colors[0]);
+  return `${adj} ${getColourName(dominant)}`;
 }
 
 // ── Color strip ───────────────────────────────────────────────────────────────

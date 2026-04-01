@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 // Colour Math ───────────────────────────────────────────────
 function hexToRgb(hex) {
@@ -1185,6 +1185,8 @@ export default function PaletteFixer() {
   const [cvdType, setCvdType] = useState("protanopia");
   const [fixedCodes, setFixedCodes] = useState(new Set());
   const [fromImage, setFromImage] = useState(false);
+  const [locked, setLocked]         = useState(new Set());
+  const [generating, setGenerating] = useState(false);
 
   const issues   = diagnose(colors);
   const score    = healthScore(issues);
@@ -1198,9 +1200,19 @@ export default function PaletteFixer() {
       for (const h of list) if (n.length < 8 && !n.includes(h)) n.push(h);
       return n;
     });
-    if (isFromImage) { setFromImage(true); setFixedCodes(new Set()); }
+    if (isFromImage) { setFromImage(true); setFixedCodes(new Set()); setLocked(new Set()); }
   };
-  const removeColor  = i  => setColors(c => c.filter((_,idx) => idx !== i));
+  const removeColor = i => {
+    setColors(c => c.filter((_,idx) => idx !== i));
+    setLocked(prev => {
+      const n = new Set();
+      for (const li of prev) {
+        if (li < i) n.add(li);
+        else if (li > i) n.add(li - 1);
+      }
+      return n;
+    });
+  };
   const updateColor  = (i,hex) => setColors(c => { const n=[...c]; n[i]=hex; return n; });
   const setRole = (hex, role) => setRoles(prev => {
     const n = {...prev};
@@ -1227,6 +1239,77 @@ export default function PaletteFixer() {
     setRoles({});
     setAutoReasons({});
   };
+
+  const toggleLock = i => setLocked(prev => {
+    const n = new Set(prev);
+    n.has(i) ? n.delete(i) : n.add(i);
+    return n;
+  });
+
+  const generatePalette = useCallback(() => {
+    const lockedHexes = [...locked].map(i => colors[i]).filter(Boolean);
+    if (locked.size >= colors.length) return;
+    // Derive anchor hue from most-saturated locked colour, or pick a random hue
+    let anchorHue;
+    if (lockedHexes.length > 0) {
+      const best = lockedHexes.reduce((b, hex) => {
+        const {r,g,b} = hexToRgb(hex);
+        const {s} = rgbToHsl(r,g,b);
+        const {r:br,g:bg,b:bb} = hexToRgb(b);
+        const {s:bs} = rgbToHsl(br,bg,bb);
+        return s > bs ? hex : b;
+      }, lockedHexes[0]);
+      const {r,g,b} = hexToRgb(best);
+      anchorHue = rgbToHsl(r,g,b).h;
+    } else {
+      anchorHue = Math.random() * 360;
+    }
+    const hueOffsets = [0, 30, 60, 120, 150, 180, 210, 240, 270, 300];
+    const presets = [
+      [72, 52],  // vivid mid-tone
+      [12, 90],  // light neutral
+      [18, 14],  // deep dark
+      [38, 68],  // soft mid
+      [88, 48],  // bold accent
+      [28, 58],  // muted supporting
+      [6,  95],  // near-white
+      [22, 22],  // deep shade
+    ];
+    const neededCount = colors.length - locked.size;
+    const accepted = [];
+    let attempts = 0;
+    while (accepted.length < neededCount && attempts < 600) {
+      attempts++;
+      const hOffset = hueOffsets[Math.floor(Math.random() * hueOffsets.length)];
+      const h = (anchorHue + hOffset) % 360;
+      const [s, l] = presets[Math.floor(Math.random() * presets.length)];
+      const jH = (h + (Math.random() - 0.5) * 20 + 360) % 360;
+      const jS = Math.max(3, Math.min(97, s + (Math.random() - 0.5) * 12));
+      const jL = Math.max(5, Math.min(95, l + (Math.random() - 0.5) * 12));
+      const candidate = hslToHex(jH, jS, jL);
+      const allExisting = [...lockedHexes, ...accepted];
+      if (!allExisting.some(ex => deltaE(ex, candidate) < 14)) accepted.push(candidate);
+    }
+    const newColors = colors.map((hex, i) => locked.has(i) ? hex : null);
+    let ai = 0;
+    for (let i = 0; i < newColors.length; i++) {
+      if (newColors[i] === null) newColors[i] = accepted[ai++] || colors[i];
+    }
+    setColors(newColors);
+    setFixedCodes(new Set());
+    setGenerating(true);
+    setTimeout(() => setGenerating(false), 380);
+  }, [locked, colors]);
+
+  useEffect(() => {
+    const onKey = e => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.code === "Space") { e.preventDefault(); generatePalette(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [generatePalette]);
 
   return (
     <div style={{
@@ -1275,6 +1358,21 @@ export default function PaletteFixer() {
         input[type="color"]::-webkit-color-swatch { border:none; border-radius:4px; }
         .lbl { font-size:9px; letter-spacing:.16em; color:#bbb;
                text-transform:uppercase; margin-bottom:10px; }
+        .lkbtn { position:absolute; bottom:4px; left:4px; width:22px; height:22px;
+                 border:none; border-radius:50%; cursor:pointer; font-size:11px;
+                 display:flex; align-items:center; justify-content:center;
+                 transition:all .15s; }
+        .lkbtn.locked { background:rgba(0,0,0,.55); color:#fff; opacity:1; }
+        .lkbtn.unlocked { background:rgba(255,255,255,.55); color:rgba(0,0,0,.5);
+                          opacity:0; }
+        .sw:hover .lkbtn.unlocked { opacity:1; }
+        .genbtn { background:#1b4332; color:#95d5b2; border:none; cursor:pointer;
+                  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em;
+                  padding:8px 14px; border-radius:4px; display:flex;
+                  align-items:center; gap:6px; transition:background .18s; }
+        .genbtn:hover { background:#143326; }
+        @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+        .genbtn.spinning svg { animation:spin .38s ease; }
       `}</style>
 
       {/* Header */}
@@ -1317,36 +1415,67 @@ export default function PaletteFixer() {
                 fontFamily:"'Playfair Display',serif", marginBottom:2
               }}>Step 2 -- Your Colours</div>
               <div style={{ fontSize:10, color:"#bbb" }}>
-                {colors.length}/8 colours -- click a swatch to edit -- type a hex code below
+                {locked.size > 0
+                  ? <><span style={{ color:"#2d6a4f", fontWeight:500 }}>{locked.size} locked — </span>lock colours you love, then generate to find ones that work with them</>
+                  : `${colors.length}/8 colours — click a swatch to edit — type a hex code below`
+                }
               </div>
             </div>
-            {warnCount > 0 && (
-              <div style={{
-                fontSize:10, color:"#8a5000", background:"#fff7ed",
-                border:"1px solid #f0c060", borderRadius:20, padding:"5px 12px"
-              }}>
-                {warnCount} issue{warnCount !== 1 ? "s" : ""} to fix below
-              </div>
-            )}
+            <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+              {warnCount > 0 && (
+                <div style={{
+                  fontSize:10, color:"#8a5000", background:"#fff7ed",
+                  border:"1px solid #f0c060", borderRadius:20, padding:"5px 12px"
+                }}>
+                  {warnCount} issue{warnCount !== 1 ? "s" : ""} to fix below
+                </div>
+              )}
+              <button
+                className={`genbtn${generating ? " spinning" : ""}`}
+                onClick={generatePalette}
+                title="Generate new colours (or press spacebar)"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                Generate
+                <span style={{ opacity:.45, fontSize:9 }}>[space]</span>
+              </button>
+            </div>
           </div>
           <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"flex-end" }}>
             {colors.map((hex, i) => {
               const {r,g,b} = hexToRgb(hex);
               const hsl = rgbToHsl(r,g,b);
               const tc  = tempCategory(hsl.h, hsl.s);
+              const isLocked = locked.has(i);
+              const dimmed   = locked.size > 0 && !isLocked;
               return (
                 <div key={i} className="sw" style={{
                   display:"flex", flexDirection:"column",
-                  alignItems:"center", gap:4
+                  alignItems:"center", gap:4,
+                  opacity: dimmed ? 0.72 : 1,
+                  transition:"opacity .18s"
                 }}>
                   <div style={{ position:"relative" }}>
                     <input
                       type="color" value={hex}
                       onChange={e => updateColor(i, e.target.value)}
-                      style={{ width:64, height:74, display:"block",
-                               boxShadow:"0 2px 8px rgba(0,0,0,.12)" }}
+                      style={{
+                        width:64, height:74, display:"block",
+                        boxShadow: isLocked
+                          ? "0 0 0 2px #2d6a4f, 0 0 0 5px #52b78880"
+                          : "0 2px 8px rgba(0,0,0,.12)"
+                      }}
                     />
                     <button className="rm" onClick={() => removeColor(i)}>x</button>
+                    <button
+                      className={`lkbtn ${isLocked ? "locked" : "unlocked"}`}
+                      onClick={() => toggleLock(i)}
+                      title={isLocked ? "Unlock this colour" : "Lock this colour to keep it when generating"}
+                    >{isLocked ? "🔒" : "🔓"}</button>
                     {roles[hex] && (
                       <div style={{
                         position:"absolute", bottom:4, left:"50%",

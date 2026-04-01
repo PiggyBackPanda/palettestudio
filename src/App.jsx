@@ -10,7 +10,6 @@ import ImageExtractor from './components/ImageExtractor';
 import SaveSlots      from './components/SaveSlots';
 
 import IssuesTab      from './tabs/IssuesTab';
-import AIGenerateTab  from './tabs/AIGenerateTab';
 import ReadabilityTab from './tabs/ReadabilityTab';
 import AddColoursTab  from './tabs/AddColoursTab';
 import ColourBlindTab  from './tabs/ColourBlindTab';
@@ -35,7 +34,7 @@ export default function App() {
     addColor, addColors, removeColor, updateColor,
     setRole, chooseForMe, clearRoles, applyFix,
     saveSlot, loadSlot, deleteSlot, renameSlot,
-    generateRandomPalette, loadPreset, loadGeneratedPalette,
+    generateRandomPalette, loadPreset,
     undo, redo, canUndo, canRedo, loadFromURL,
   } = palette;
 
@@ -369,12 +368,6 @@ export default function App() {
             fromImage={fromImage}
             warnCount={warnCount}
             onFix={applyFix}
-          />
-        )}
-        {tab === 'aigenerate' && (
-          <AIGenerateTab
-            onNavigate={setTab}
-            onLoadPalette={loadGeneratedPalette}
           />
         )}
         {tab === 'readability' && (

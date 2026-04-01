@@ -2,7 +2,6 @@ export const DEFAULTS = ['#2D4A6B', '#E8734A', '#F5E6C8', '#1A1A2E'];
 
 export const TABS = [
   { key: 'issues',      label: 'Issues & Fixes' },
-  { key: 'aigenerate',  label: 'AI Generate' },
   { key: 'readability', label: 'Readability' },
   { key: 'addcolours',  label: 'Add Colours' },
   { key: 'colourblind', label: 'Colour Blindness' },

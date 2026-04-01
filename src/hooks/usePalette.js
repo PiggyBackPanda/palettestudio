@@ -32,7 +32,6 @@ export function usePalette() {
   const [autoReasons,        setAutoReasons]        = useState({});
   const [fixedCodes,         setFixedCodes]         = useState(new Set());
   const [fromImage,          setFromImage]          = useState(false);
-  const [fromAI,             setFromAI]             = useState(false);
   const [savedSlots,         setSavedSlots]         = useState(loadSlotsFromStorage);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
 
@@ -224,17 +223,6 @@ export function usePalette() {
     setAutoReasons({});
     setFixedCodes(new Set());
     setFromImage(false);
-    setFromAI(false);
-  };
-
-  const loadGeneratedPalette = (newColors, newRoles) => {
-    pushHistory(newColors, newRoles);
-    setColors(newColors);
-    setRolesState(newRoles);
-    setAutoReasons({});
-    setFixedCodes(new Set());
-    setFromImage(false);
-    setFromAI(true);
   };
 
   // ── URL loading ─────────────────────────────────────────────────────────────
@@ -303,7 +291,6 @@ export function usePalette() {
     autoReasons,
     fixedCodes,
     fromImage,
-    fromAI,
     savedSlots,
     storageUnavailable,
     // Derived
@@ -332,7 +319,6 @@ export function usePalette() {
     renameSlot,
     generateRandomPalette,
     loadPreset,
-    loadGeneratedPalette,
     loadFromURL,
   };
 }
