@@ -13,8 +13,9 @@ import IssuesTab      from './tabs/IssuesTab';
 import AIGenerateTab  from './tabs/AIGenerateTab';
 import ReadabilityTab from './tabs/ReadabilityTab';
 import AddColoursTab  from './tabs/AddColoursTab';
-import ColourBlindTab from './tabs/ColourBlindTab';
-import RolesTab       from './tabs/RolesTab';
+import ColourBlindTab  from './tabs/ColourBlindTab';
+import ColourNamesTab  from './tabs/ColourNamesTab';
+import RolesTab        from './tabs/RolesTab';
 import ExportTab      from './tabs/ExportTab';
 import MockupsTab     from './tabs/MockupsTab';
 
@@ -399,6 +400,9 @@ export default function App() {
             cvdType={cvdType}
             setCvdType={setCvdType}
           />
+        )}
+        {tab === 'colournames' && (
+          <ColourNamesTab colors={colors} />
         )}
         {tab === 'roles' && (
           <RolesTab

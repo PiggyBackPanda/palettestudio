@@ -6,6 +6,7 @@ export const TABS = [
   { key: 'readability', label: 'Readability' },
   { key: 'addcolours',  label: 'Add Colours' },
   { key: 'colourblind', label: 'Colour Blindness' },
+  { key: 'colournames', label: 'Colour Names' },
   { key: 'roles',       label: 'Colour Jobs' },
   { key: 'export',      label: 'Export' },
   { key: 'mockups',     label: 'Mockups' },
