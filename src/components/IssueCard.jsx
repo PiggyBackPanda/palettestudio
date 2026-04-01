@@ -74,7 +74,7 @@ export default function IssueCard({ issue, onFix, fixApplied }) {
         border:       `1px solid ${tm.border}`,
         borderRadius: 'var(--ps-radius-lg)',
         background:   tm.bg,
-        padding:      '14px 16px',
+        padding:      '14px 16px 18px',
         opacity:      fixApplied ? 0.45 : 1,
         transition:   'opacity .3s',
       }}

@@ -3,11 +3,13 @@ import { usePalette } from './hooks/usePalette';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { encodePalette, decodePalette } from './utils/paletteURL';
 import { TABS } from './constants';
+import { PRESETS } from './data/presets';
 
 import ScoreRing      from './components/ScoreRing';
 import PaletteStrip   from './components/PaletteStrip';
 import ImageExtractor from './components/ImageExtractor';
 import SaveSlots      from './components/SaveSlots';
+import WelcomeModal   from './components/WelcomeModal';
 
 import IssuesTab      from './tabs/IssuesTab';
 import ReadabilityTab from './tabs/ReadabilityTab';
@@ -78,7 +80,7 @@ export default function App() {
     padding:        '5px 7px',
     cursor:         disabled ? 'default' : 'pointer',
     color:          disabled ? 'var(--ps-text-disabled)' : 'var(--ps-text-secondary)',
-    opacity:        disabled ? 0.35 : 1,
+    opacity:        disabled ? 0.40 : 1,
     display:        'flex',
     alignItems:     'center',
     justifyContent: 'center',
@@ -107,6 +109,7 @@ export default function App() {
         }}
       >
         <div
+          className="ps-header-inner"
           style={{
             maxWidth:       980,
             margin:         '0 auto',
@@ -130,36 +133,32 @@ export default function App() {
             >
               Palette Studio
             </h1>
-            <p
-              style={{
-                fontFamily:    'var(--ps-font-ui)',
-                fontSize:      'var(--ps-text-xs)',
-                color:         'var(--ps-text-tertiary)',
-                letterSpacing: '.08em',
-                marginTop:     2,
-              }}
-            >
-              UPLOAD LOGO · DIAGNOSE · FIX · ASSIGN COLOUR JOBS
-            </p>
           </div>
           {/* Right — controls + score ring + help */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 
-            {/* Undo */}
-            <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)" style={ghostBtn(!canUndo)}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M5.5 5.5H11a3 3 0 0 1 0 6H8v-1.5h3a1.5 1.5 0 0 0 0-3H5.5V9L2 6.5 5.5 4v1.5z"/>
-              </svg>
-            </button>
-
-            {/* Redo */}
-            <button onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)" style={ghostBtn(!canRedo)}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M10.5 5.5H5a3 3 0 0 0 0 6h3v-1.5H5a1.5 1.5 0 0 1 0-3h5.5V9L14 6.5 10.5 4v1.5z"/>
-              </svg>
-            </button>
-
-            <div style={{ width: 1, height: 20, background: 'var(--ps-border)', margin: '0 2px' }} />
+            {/* Undo / Redo — grouped pill */}
+            <div style={{
+              display:      'flex',
+              alignItems:   'center',
+              background:   'var(--ps-bg-subtle)',
+              border:       '1px solid var(--ps-border)',
+              borderRadius: 'var(--ps-radius-full)',
+              padding:      '2px 4px',
+              gap:          2,
+            }}>
+              <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)" style={ghostBtn(!canUndo)}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M5.5 5.5H11a3 3 0 0 1 0 6H8v-1.5h3a1.5 1.5 0 0 0 0-3H5.5V9L2 6.5 5.5 4v1.5z"/>
+                </svg>
+              </button>
+              <div style={{ width: 1, height: 14, background: 'var(--ps-border)' }} />
+              <button onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)" style={ghostBtn(!canRedo)}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M10.5 5.5H5a3 3 0 0 0 0 6h3v-1.5H5a1.5 1.5 0 0 1 0-3h5.5V9L14 6.5 10.5 4v1.5z"/>
+                </svg>
+              </button>
+            </div>
 
             {/* Share */}
             <div style={{ position: 'relative' }}>
@@ -240,29 +239,21 @@ export default function App() {
               )}
             </div>
 
-            <ScoreRing score={score} />
+            <div className="ps-score-ring-wrap">
+              <ScoreRing score={score} />
+            </div>
 
             {/* Keyboard shortcuts toggle */}
             <button
               onClick={() => setShowShortcuts(s => !s)}
               title="Keyboard shortcuts"
               style={{
-                background:     showShortcuts ? 'var(--ps-accent-subtle)' : 'none',
-                border:         '1px solid',
-                borderColor:    showShortcuts ? 'var(--ps-accent)' : 'var(--ps-border)',
-                borderRadius:   'var(--ps-radius-full)',
-                width:          24,
-                height:         24,
-                display:        'flex',
-                alignItems:     'center',
-                justifyContent: 'center',
-                fontFamily:     'var(--ps-font-ui)',
-                fontSize:       'var(--ps-text-sm)',
-                fontWeight:     600,
-                color:          showShortcuts ? 'var(--ps-accent)' : 'var(--ps-text-tertiary)',
-                cursor:         'pointer',
-                transition:     'background .15s, color .15s, border-color .15s',
-                flexShrink:     0,
+                ...ghostBtn(false),
+                background:  showShortcuts ? 'var(--ps-accent-subtle)' : 'none',
+                color:       showShortcuts ? 'var(--ps-accent)' : 'var(--ps-text-tertiary)',
+                fontFamily:  'var(--ps-font-ui)',
+                fontSize:    'var(--ps-text-md)',
+                fontWeight:  600,
               }}
             >
               ?
@@ -293,7 +284,7 @@ export default function App() {
       </header>
 
       {/* ── Main ───────────────────────────────────────────────────────── */}
-      <main style={{ maxWidth: 980, margin: '0 auto', padding: '20px 24px 60px' }}>
+      <main style={{ maxWidth: 980, margin: '0 auto', padding: '20px 24px 32px' }}>
 
         {/* Image extractor */}
         <ImageExtractor
@@ -315,48 +306,63 @@ export default function App() {
           onGenerateRandom={generateRandomPalette}
         />
 
+        {/* ── Save Slots ─────────────────────────────────────────────── */}
+        <SaveSlots
+          savedSlots={savedSlots}
+          currentColors={colors}
+          storageUnavailable={storageUnavailable}
+          onSave={saveSlot}
+          onLoad={loadSlot}
+          onDelete={deleteSlot}
+          onRename={renameSlot}
+        />
+
         {/* ── Tab navigation ─────────────────────────────────────────── */}
-        <div
-          style={{
-            borderBottom:  '1px solid var(--ps-border)',
-            marginBottom:  18,
-            display:       'flex',
-            overflowX:     'auto',
-            gap:           0,
-            background:    'var(--ps-bg-surface)',
-            borderRadius:  'var(--ps-radius-lg) var(--ps-radius-lg) 0 0',
-            padding:       '0 4px',
-          }}
-        >
-          {TABS.map(t => (
-            <button
-              key={t.key}
-              className={`tb${tab === t.key ? ' on' : ''}`}
-              onClick={() => setTab(t.key)}
-            >
-              {t.label}
-              {t.key === 'issues' && warnCount > 0 && (
-                <span
-                  style={{
-                    marginLeft:     5,
-                    background:     'var(--ps-accent)',
-                    color:          'var(--ps-accent-text)',
-                    borderRadius:   'var(--ps-radius-full)',
-                    width:          16,
-                    height:         16,
-                    display:        'inline-flex',
-                    alignItems:     'center',
-                    justifyContent: 'center',
-                    fontSize:       9,
-                    fontWeight:     700,
-                    verticalAlign:  'middle',
-                  }}
-                >
-                  {warnCount}
-                </span>
-              )}
-            </button>
-          ))}
+        <div style={{ position: 'relative', marginBottom: 18 }}>
+          <div
+            className="ps-tab-bar"
+            style={{
+              borderBottom:  '1px solid var(--ps-border)',
+              display:       'flex',
+              overflowX:     'auto',
+              gap:           0,
+              background:    'var(--ps-bg-surface)',
+              borderRadius:  'var(--ps-radius-lg) var(--ps-radius-lg) 0 0',
+              padding:       '0 4px',
+              scrollbarWidth: 'none',
+            }}
+          >
+            {TABS.map(t => (
+              <button
+                key={t.key}
+                className={`tb${tab === t.key ? ' on' : ''}`}
+                onClick={() => setTab(t.key)}
+              >
+                {t.label}
+                {t.key === 'issues' && warnCount > 0 && (
+                  <span
+                    style={{
+                      marginLeft:     5,
+                      background:     'var(--ps-accent)',
+                      color:          'var(--ps-accent-text)',
+                      borderRadius:   'var(--ps-radius-full)',
+                      width:          16,
+                      height:         16,
+                      display:        'inline-flex',
+                      alignItems:     'center',
+                      justifyContent: 'center',
+                      fontSize:       10,
+                      fontWeight:     700,
+                      verticalAlign:  'middle',
+                    }}
+                  >
+                    {warnCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <div className="ps-tab-fade" />
         </div>
 
         {/* ── Tab content ────────────────────────────────────────────── */}
@@ -418,17 +424,12 @@ export default function App() {
           />
         )}
 
-        {/* ── Save Slots ─────────────────────────────────────────────── */}
-        <SaveSlots
-          savedSlots={savedSlots}
-          currentColors={colors}
-          storageUnavailable={storageUnavailable}
-          onSave={saveSlot}
-          onLoad={loadSlot}
-          onDelete={deleteSlot}
-          onRename={renameSlot}
-        />
       </main>
+
+      <WelcomeModal
+        onClose={() => {}}
+        onLoadExample={() => loadPreset(PRESETS[0])}
+      />
     </>
   );
 }

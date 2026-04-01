@@ -244,9 +244,9 @@ function SurpriseBtn({ onClick }) {
         display:       'flex',
         alignItems:    'center',
         gap:           6,
-        background:    'var(--ps-bg-surface)',
-        color:         hovered ? 'var(--ps-accent)' : 'var(--ps-text-secondary)',
-        border:        hovered ? '1px solid var(--ps-accent)' : '1px solid var(--ps-border)',
+        background:    hovered ? 'var(--ps-accent)' : 'var(--ps-accent-subtle)',
+        color:         hovered ? 'var(--ps-accent-text)' : 'var(--ps-accent)',
+        border:        '1px solid var(--ps-accent)',
         borderRadius:  'var(--ps-radius-md)',
         padding:       '7px 14px',
         fontFamily:    'var(--ps-font-ui)',
@@ -349,7 +349,7 @@ export default function PaletteStrip({
               +
             </div>
             <button className="addbtn" onClick={() => onAdd(picker)}>
-              Add {picker.toUpperCase()}
+              + Add colour
             </button>
           </div>
         )}

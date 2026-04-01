@@ -100,8 +100,8 @@ export default function SaveSlots({
     <div
       style={{
         borderTop:  '1px solid var(--ps-border)',
-        paddingTop: 28,
-        marginTop:  28,
+        paddingTop: 16,
+        marginTop:  16,
       }}
     >
       {/* Section header */}
@@ -111,23 +111,11 @@ export default function SaveSlots({
           fontSize:     'var(--ps-text-lg)',
           fontWeight:   700,
           color:        'var(--ps-text-primary)',
-          marginBottom: 4,
+          marginBottom: 8,
         }}
       >
         Saved Palettes
       </div>
-      <p
-        style={{
-          fontFamily:   'var(--ps-font-ui)',
-          fontSize:     'var(--ps-text-sm)',
-          color:        'var(--ps-text-secondary)',
-          margin:       '0 0 16px',
-          lineHeight:   1.55,
-        }}
-      >
-        Save up to 4 palette snapshots to compare and revisit.
-      </p>
-
       {/* Storage warning */}
       {storageUnavailable && (
         <div
@@ -153,7 +141,7 @@ export default function SaveSlots({
           type="text"
           value={newName}
           onChange={e => setNewName(e.target.value)}
-          placeholder="Palette name…"
+          placeholder="Name this palette to save a snapshot…"
           onKeyDown={e => { if (e.key === 'Enter' && !atMax) handleSave(); }}
           disabled={atMax}
           style={{

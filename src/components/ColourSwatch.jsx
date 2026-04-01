@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { hexToRgb, rgbToHsl, textOn, rgbToOklch } from '../utils/colourMath';
+import { hexToRgb, rgbToHsl, textOn } from '../utils/colourMath';
 import { ROLE_COL } from '../utils/autoRoles';
 import { getColourName } from '../utils/colourNames';
 
@@ -23,7 +23,6 @@ export default function ColourSwatch({
 
   const { r, g, b } = hexToRgb(hex);
   const { h, s, l } = rgbToHsl(r, g, b);
-  const oklch       = rgbToOklch(r, g, b);
   const textColor   = textOn(hex);
 
   const tier =
@@ -43,7 +42,7 @@ export default function ColourSwatch({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', width: 108 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', width: 120 }}>
 
       {/* ── Main swatch card ──────────────────────────────── */}
       <div
@@ -117,7 +116,7 @@ export default function ColourSwatch({
         <div
           style={{
             fontFamily:   'var(--ps-font-ui)',
-            fontSize:     'var(--ps-text-xs)',
+            fontSize:     'var(--ps-text-sm)',
             color:        textColor,
             opacity:      0.65,
             overflow:     'hidden',
@@ -132,13 +131,8 @@ export default function ColourSwatch({
         </div>
 
         {/* HSL values — monospace */}
-        <div className="lbl" style={{ opacity: 0.75, fontSize: 9 }}>
+        <div className="lbl" style={{ opacity: 0.75, fontSize: 10 }}>
           {Math.round(h)}° {Math.round(s)}% {Math.round(l)}%
-        </div>
-
-        {/* OKLCH values — monospace */}
-        <div className="lbl" style={{ opacity: 0.6, fontSize: 9 }}>
-          L{oklch.L.toFixed(2)} C{oklch.C.toFixed(2)}
         </div>
 
         {/* Role badge */}
@@ -173,7 +167,7 @@ export default function ColourSwatch({
             background:    'rgba(0,0,0,0.22)',
             color:         '#fff',
             fontFamily:    'var(--ps-font-ui)',
-            fontSize:      7,
+            fontSize:      9,
             padding:       '1px 5px',
             borderRadius:  'var(--ps-radius-sm)',
             letterSpacing: '.05em',
@@ -192,19 +186,20 @@ export default function ColourSwatch({
           border:        '1px solid var(--ps-border)',
           borderTop:     isScaleOpen ? '1px solid var(--ps-accent)' : '1px solid var(--ps-border)',
           borderRadius:  isScaleOpen ? '0 0 var(--ps-radius-md) var(--ps-radius-md)' : 'var(--ps-radius-md)',
-          padding:       '3px 0',
+          padding:       '5px 0',
+          minHeight:     28,
           cursor:        'pointer',
           fontFamily:    'var(--ps-font-ui)',
-          fontSize:      8,
+          fontSize:      10,
           fontWeight:    600,
-          color:         isScaleOpen ? 'var(--ps-accent)' : 'var(--ps-text-tertiary)',
+          color:         isScaleOpen ? 'var(--ps-accent)' : 'var(--ps-text-secondary)',
           letterSpacing: '.04em',
           textAlign:     'center',
           width:         '100%',
           transition:    'background .15s, color .15s',
         }}
       >
-        {isScaleOpen ? '▲ hide scale' : '▾ scale'}
+        {isScaleOpen ? '▲ Hide scale' : '▾ Tints & shades'}
       </button>
     </div>
   );

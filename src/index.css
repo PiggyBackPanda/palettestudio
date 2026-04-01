@@ -98,8 +98,8 @@ body {
 /* Individual swatch */
 .sw {
   position:      relative;
-  width:         108px;
-  height:        108px;
+  width:         120px;
+  height:        120px;
   border-radius: var(--ps-radius-lg);
   display:       flex;
   flex-direction: column;
@@ -114,7 +114,7 @@ body {
 /* Hex label inside swatch — monospace, it's technical data */
 .hx {
   font-family:   var(--ps-font-mono);
-  font-size:     10px;
+  font-size:     12px;
   font-weight:   500;
   letter-spacing: .04em;
   pointer-events: none;
@@ -224,3 +224,29 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--ps-border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--ps-border-strong); }
+
+/* Tab bar — hide scrollbar, add right-edge fade for overflow indicator */
+.ps-tab-bar::-webkit-scrollbar { display: none; }
+
+.ps-tab-fade {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 1px; /* sits above the border-bottom */
+  width: 48px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--ps-bg-surface));
+  border-radius: 0 var(--ps-radius-lg) 0 0;
+}
+
+/* Mobile header — compress to single row at narrow widths */
+@media (max-width: 640px) {
+  .ps-header-inner {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .ps-score-ring-wrap svg {
+    width: 52px !important;
+    height: 52px !important;
+  }
+}
