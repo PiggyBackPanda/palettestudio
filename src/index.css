@@ -1,0 +1,226 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --ps-bg-app:     #F4F3F0;
+  --ps-bg-surface: #FFFFFF;
+  --ps-bg-subtle:  #F8F7F5;
+  --ps-bg-overlay: #EFEDE9;
+
+  /* Borders */
+  --ps-border:        #E2E0DC;
+  --ps-border-strong: #C8C5BF;
+  --ps-border-focus:  #4F46E5;
+
+  /* Text */
+  --ps-text-primary:   #18181B;
+  --ps-text-secondary: #52525B;
+  --ps-text-tertiary:  #A1A1AA;
+  --ps-text-disabled:  #D4D4D8;
+
+  /* Accent — deep indigo */
+  --ps-accent:        #4F46E5;
+  --ps-accent-hover:  #4338CA;
+  --ps-accent-subtle: #EEF2FF;
+  --ps-accent-text:   #FFFFFF;
+
+  /* Semantic */
+  --ps-success:        #16A34A;
+  --ps-success-subtle: #F0FDF4;
+  --ps-warning:        #D97706;
+  --ps-warning-subtle: #FFFBEB;
+  --ps-danger:         #DC2626;
+  --ps-danger-subtle:  #FEF2F2;
+  --ps-info:           #2563EB;
+  --ps-info-subtle:    #EFF6FF;
+
+  /* Shadows */
+  --ps-shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --ps-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --ps-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+
+  /* Typography */
+  --ps-font-ui:   'Plus Jakarta Sans', system-ui, sans-serif;
+  --ps-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Type scale */
+  --ps-text-xs:   11px;
+  --ps-text-sm:   12px;
+  --ps-text-base: 13px;
+  --ps-text-md:   14px;
+  --ps-text-lg:   16px;
+  --ps-text-xl:   20px;
+  --ps-text-2xl:  24px;
+
+  /* Spacing */
+  --ps-space-1:  4px;
+  --ps-space-2:  8px;
+  --ps-space-3:  12px;
+  --ps-space-4:  16px;
+  --ps-space-5:  20px;
+  --ps-space-6:  24px;
+  --ps-space-8:  32px;
+  --ps-space-10: 40px;
+  --ps-space-12: 48px;
+
+  /* Border radius */
+  --ps-radius-sm:   4px;
+  --ps-radius-md:   6px;
+  --ps-radius-lg:   10px;
+  --ps-radius-xl:   14px;
+  --ps-radius-full: 9999px;
+}
+
+/* ── Reset & base ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family:            var(--ps-font-ui);
+  font-size:              var(--ps-text-base);
+  color:                  var(--ps-text-secondary);
+  background:             var(--ps-bg-app);
+  min-height:             100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Shared layout classes ─────────────────────────────────────────────────── */
+
+/* Swatch grid */
+.sg {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       10px;
+}
+
+/* Individual swatch */
+.sw {
+  position:      relative;
+  width:         108px;
+  height:        108px;
+  border-radius: var(--ps-radius-lg);
+  display:       flex;
+  flex-direction: column;
+  align-items:   center;
+  justify-content: center;
+  overflow:      hidden;
+  box-shadow:    var(--ps-shadow-sm);
+  flex-shrink:   0;
+  border:        1.5px solid rgba(0,0,0,.06);
+}
+
+/* Hex label inside swatch — monospace, it's technical data */
+.hx {
+  font-family:   var(--ps-font-mono);
+  font-size:     10px;
+  font-weight:   500;
+  letter-spacing: .04em;
+  pointer-events: none;
+  text-align:    center;
+}
+
+/* Secondary label inside swatch */
+.lbl {
+  font-family:   var(--ps-font-mono);
+  pointer-events: none;
+  text-align:    center;
+  line-height:   1.3;
+}
+
+/* Add-colour button inside the empty swatch slot */
+.addbtn {
+  margin-top:    var(--ps-space-1);
+  background:    var(--ps-accent);
+  color:         var(--ps-accent-text);
+  border:        none;
+  border-radius: var(--ps-radius-sm);
+  padding:       3px 8px;
+  font-family:   var(--ps-font-ui);
+  font-size:     9px;
+  font-weight:   600;
+  cursor:        pointer;
+  pointer-events: all;
+  position:      relative;
+  z-index:       2;
+  letter-spacing: .04em;
+  transition:    background .15s;
+}
+.addbtn:hover { background: var(--ps-accent-hover); }
+
+/* Remove button (×) */
+.rm {
+  position:       absolute;
+  top:            4px;
+  right:          4px;
+  width:          18px;
+  height:         18px;
+  border-radius:  50%;
+  background:     rgba(0,0,0,.22);
+  color:          #fff;
+  border:         none;
+  font-size:      12px;
+  line-height:    1;
+  cursor:         pointer;
+  display:        flex;
+  align-items:    center;
+  justify-content: center;
+  opacity:        0;
+  transition:     opacity .15s, background .15s;
+  z-index:        3;
+  pointer-events: all;
+}
+.sw:hover .rm { opacity: 1; }
+.rm:hover     { background: var(--ps-danger) !important; }
+
+/* Tab bar button */
+.tb {
+  background:    none;
+  border:        none;
+  border-bottom: 2px solid transparent;
+  padding:       9px 14px;
+  font-family:   var(--ps-font-ui);
+  font-size:     var(--ps-text-sm);
+  font-weight:   500;
+  cursor:        pointer;
+  color:         var(--ps-text-tertiary);
+  letter-spacing: .02em;
+  transition:    color .15s, border-color .15s;
+  white-space:   nowrap;
+  position:      relative;
+}
+.tb:hover  { color: var(--ps-text-secondary); }
+.tb.on     { color: var(--ps-accent); border-bottom-color: var(--ps-accent); font-weight: 600; }
+
+/* Content card */
+.card {
+  background:    var(--ps-bg-surface);
+  border:        1px solid var(--ps-border);
+  border-radius: var(--ps-radius-xl);
+  padding:       var(--ps-space-5);
+  box-shadow:    var(--ps-shadow-sm);
+}
+
+/* Role row */
+.rp {
+  display:       flex;
+  align-items:   flex-start;
+  gap:           var(--ps-space-3);
+  padding:       var(--ps-space-3);
+  background:    var(--ps-bg-subtle);
+  border:        1px solid var(--ps-border);
+  border-radius: var(--ps-radius-lg);
+}
+
+/* ── AI Generate loading animation ────────────────────────────────────────── */
+@keyframes ps-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50%       { opacity: 1;    transform: scale(1);   }
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ps-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ps-border-strong); }
