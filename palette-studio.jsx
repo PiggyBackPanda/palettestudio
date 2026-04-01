@@ -767,12 +767,100 @@ const TABS = [
   { key: "addcolours",  label: "Add Colours" },
   { key: "colourblind", label: "Colour Blindness" },
   { key: "roles",       label: "Colour Jobs" },
+  { key: "templates",   label: "Brand Templates" },
+  { key: "typography",  label: "Typography" },
 ];
 const CVD_TYPES = [
   { key: "protanopia",   label: "Red-blind",   note: "Protanopia -- ~1% of men" },
   { key: "deuteranopia", label: "Green-blind",  note: "Deuteranopia -- ~1% of men" },
   { key: "tritanopia",   label: "Blue-blind",   note: "Tritanopia -- rare" },
 ];
+
+// Typography Pairing Engine ─────────────────────────────────
+const FONT_PAIRS = [
+  {
+    name: "Editorial",
+    heading: "'Playfair Display', serif",
+    body: "'Source Sans 3', sans-serif",
+    mood: "Classic editorial elegance — refined, authoritative, and timeless",
+    vibes: ["warm", "neutral"],
+    satRange: [15, 70],
+  },
+  {
+    name: "Geometric Modern",
+    heading: "'DM Sans', sans-serif",
+    body: "'IBM Plex Sans', sans-serif",
+    mood: "Clean tech-forward minimalism — precise, trustworthy, and modern",
+    vibes: ["cool", "neutral"],
+    satRange: [10, 55],
+  },
+  {
+    name: "Humanist Warmth",
+    heading: "'Nunito', sans-serif",
+    body: "'Lora', serif",
+    mood: "Friendly and approachable — warm, inviting, and personal",
+    vibes: ["warm", "neutral"],
+    satRange: [20, 65],
+  },
+  {
+    name: "Bold Statement",
+    heading: "'Space Grotesk', sans-serif",
+    body: "'JetBrains Mono', monospace",
+    mood: "Technical confidence — bold, structured, and unapologetic",
+    vibes: ["cool", "neutral"],
+    satRange: [30, 90],
+  },
+  {
+    name: "Organic & Natural",
+    heading: "'Fraunces', serif",
+    body: "'Outfit', sans-serif",
+    mood: "Earthy and artisanal — organic, grounded, and authentic",
+    vibes: ["warm"],
+    satRange: [10, 50],
+  },
+  {
+    name: "Quiet Luxury",
+    heading: "'Cormorant Garamond', serif",
+    body: "'Karla', sans-serif",
+    mood: "Understated sophistication — luxurious, calm, and considered",
+    vibes: ["neutral", "cool"],
+    satRange: [5, 40],
+  },
+];
+
+function scoreFontPair(pair, colors) {
+  if (!colors.length) return 50;
+  const data = colors.map(hex => {
+    const { r, g, b } = hexToRgb(hex);
+    return rgbToHsl(r, g, b);
+  });
+  // Dominant hue = most saturated colour
+  const dominant = data.reduce((best, c) => c.s > best.s ? c : best, data[0]);
+  const avgSat = data.reduce((sum, c) => sum + c.s, 0) / data.length;
+  // Temperature classification
+  const hue = dominant.h;
+  const isWarm = (hue >= 330 || hue < 90);
+  const isCool = (hue >= 150 && hue < 330);
+  const tempLabel = dominant.s < 10 ? "neutral" : isWarm ? "warm" : isCool ? "cool" : "neutral";
+  // Vibe match score (0-40)
+  let vibeScore = 0;
+  if (pair.vibes.includes(tempLabel)) vibeScore = 40;
+  else if (pair.vibes.includes("neutral") || tempLabel === "neutral") vibeScore = 25;
+  else vibeScore = 8;
+  // Saturation range match (0-40)
+  let satScore = 0;
+  if (avgSat >= pair.satRange[0] && avgSat <= pair.satRange[1]) {
+    satScore = 40;
+  } else {
+    const dist = avgSat < pair.satRange[0]
+      ? pair.satRange[0] - avgSat
+      : avgSat - pair.satRange[1];
+    satScore = Math.max(0, 40 - dist * 1.2);
+  }
+  // Base aesthetic bonus (0-20) — slight variety
+  const baseBonus = 15 + Math.round(Math.sin(hue * 0.0174 + pair.satRange[0]) * 5);
+  return Math.round(Math.min(100, vibeScore + satScore + baseBonus));
+}
 
 // Sub-components ────────────────────────────────────────────
 function ScoreRing({ score }) {
@@ -1187,6 +1275,7 @@ export default function PaletteFixer() {
   const [fromImage, setFromImage] = useState(false);
   const [locked, setLocked]         = useState(new Set());
   const [generating, setGenerating] = useState(false);
+  const [selectedFont, setSelectedFont] = useState(null);
 
   const issues   = diagnose(colors);
   const score    = healthScore(issues);
@@ -1317,7 +1406,7 @@ export default function PaletteFixer() {
       background:"#f5f2ed", minHeight:"100vh", color:"#2a2420"
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=Nunito:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Karla:wght@400;500;700&display=swap');
         * { box-sizing:border-box; margin:0; padding:0; }
         .sw { transition:transform .18s, box-shadow .18s; }
         .sw:hover { transform:translateY(-4px); box-shadow:0 12px 28px rgba(0,0,0,.18); }
@@ -1389,9 +1478,9 @@ export default function PaletteFixer() {
             <h1 style={{
               fontFamily:"'Playfair Display',serif",
               fontSize:24, fontWeight:400, color:"#1a1510"
-            }}>Palette Fixer</h1>
+            }}>Palette Studio</h1>
             <p style={{ fontSize:9, color:"#ccc", letterSpacing:".1em", marginTop:2 }}>
-              Upload logo -- check issues -- fix with one click -- assign colour roles
+              Diagnose – fix – assign roles – preview templates – pick typography
             </p>
           </div>
           <ScoreRing score={score} />
@@ -2202,6 +2291,399 @@ export default function PaletteFixer() {
             })()}
           </div>
         )}
+
+        {/* Typography tab */}
+        {tab === "typography" && (() => {
+          const ranked = FONT_PAIRS
+            .map(p => ({ ...p, score: scoreFontPair(p, colors) }))
+            .sort((a, b) => b.score - a.score);
+          const activePair = selectedFont || ranked[0];
+          // Derive preview colours from roles or palette
+          const data = colors.map(hex => { const {r,g,b} = hexToRgb(hex); return { hex, ...rgbToHsl(r,g,b), lum: luminance(r,g,b) }; });
+          const bgHex = Object.keys(roles).find(k => roles[k] === "Background")
+            || (data.length ? data.reduce((b,c) => c.l > b.l ? c : b, data[0]).hex : "#f5f0e8");
+          const txtHex = Object.keys(roles).find(k => roles[k] === "Text")
+            || (data.length ? data.reduce((b,c) => c.l < b.l ? c : b, data[0]).hex : "#1a1a2e");
+          return (
+            <div>
+              <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+                <strong style={{ color:"#555" }}>Typography Pairing</strong>
+                {" "}— We've scored 6 curated font pairings against your palette's colour temperature and saturation.
+                Click any pair to select it for your Brand Templates.
+              </div>
+              <div style={{ display:"grid", gap:10 }}>
+                {ranked.map((pair, i) => {
+                  const isSelected = activePair.name === pair.name;
+                  return (
+                    <div key={pair.name}
+                      onClick={() => setSelectedFont(pair)}
+                      style={{
+                        background: "#fff",
+                        border: isSelected ? "2px solid #b8703a" : "1px solid #e4ddd4",
+                        borderRadius: 8,
+                        padding: "16px 20px",
+                        cursor: "pointer",
+                        transition: "all .18s",
+                        boxShadow: isSelected ? "0 4px 16px rgba(184,112,58,.18)" : "0 1px 4px rgba(0,0,0,.05)",
+                      }}
+                    >
+                      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:14, flexWrap:"wrap" }}>
+                        <div style={{ flex:1, minWidth:200 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
+                            <span style={{
+                              fontSize:9, color:"#b8703a", letterSpacing:".12em",
+                              textTransform:"uppercase", fontFamily:"'DM Mono',monospace"
+                            }}>#{i+1}</span>
+                            <span style={{
+                              fontFamily: pair.heading, fontSize:18, color:"#333", fontWeight:600
+                            }}>{pair.name}</span>
+                            <span style={{
+                              fontSize:9, background: pair.score >= 70 ? "#e8f5e8" : pair.score >= 45 ? "#fff8e0" : "#fdecea",
+                              color: pair.score >= 70 ? "#2a6a2a" : pair.score >= 45 ? "#7a6000" : "#8a2020",
+                              borderRadius:10, padding:"2px 8px", fontFamily:"'DM Mono',monospace"
+                            }}>{pair.score}%</span>
+                            {isSelected && (
+                              <span style={{
+                                fontSize:8, background:"#b8703a", color:"#fff",
+                                borderRadius:10, padding:"2px 8px", letterSpacing:".1em",
+                                textTransform:"uppercase"
+                              }}>Selected</span>
+                            )}
+                          </div>
+                          <div style={{ fontSize:10, color:"#999", marginBottom:8, lineHeight:1.6 }}>{pair.mood}</div>
+                          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:6 }}>
+                            {pair.vibes.map(v => (
+                              <span key={v} style={{
+                                fontSize:8, color:"#aaa", border:"1px solid #e4ddd4",
+                                borderRadius:10, padding:"2px 7px"
+                              }}>{v}</span>
+                            ))}
+                            <span style={{
+                              fontSize:8, color:"#aaa", border:"1px solid #e4ddd4",
+                              borderRadius:10, padding:"2px 7px"
+                            }}>sat {pair.satRange[0]}–{pair.satRange[1]}%</span>
+                          </div>
+                          <div style={{ fontSize:9, color:"#bbb" }}>
+                            Heading: <span style={{ color:"#888" }}>{pair.heading.split(",")[0].replace(/'/g,"")}</span>
+                            {" "}· Body: <span style={{ color:"#888" }}>{pair.body.split(",")[0].replace(/'/g,"")}</span>
+                          </div>
+                        </div>
+                        {/* Live preview */}
+                        <div style={{
+                          background: bgHex, borderRadius:6, padding:"16px 20px",
+                          minWidth:220, flex:"0 0 auto",
+                          border: `1px solid ${txtHex}15`
+                        }}>
+                          <div style={{
+                            fontFamily: pair.heading, fontSize:20, color: txtHex,
+                            marginBottom:6, fontWeight:600, lineHeight:1.3
+                          }}>The Quick Brown Fox</div>
+                          <div style={{
+                            fontFamily: pair.body, fontSize:12, color: txtHex,
+                            opacity:.8, lineHeight:1.7
+                          }}>Jumps over the lazy dog. This is how your body text will look with this pairing on your palette colours.</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Brand Templates tab */}
+        {tab === "templates" && (() => {
+          const activePair = selectedFont || FONT_PAIRS[0];
+          const headingFont = activePair.heading;
+          const bodyFont = activePair.body;
+          // Derive colours from roles, falling back to palette best-guesses
+          const data = colors.map(hex => { const {r,g,b} = hexToRgb(hex); return { hex, ...rgbToHsl(r,g,b), lum: luminance(r,g,b) }; });
+          const rolesAssigned = Object.keys(roles).length >= 2;
+          const bgCol = Object.keys(roles).find(k => roles[k] === "Background")
+            || (data.length ? data.reduce((b,c) => c.l > b.l ? c : b, data[0]).hex : "#f5f0e8");
+          const heroCol = Object.keys(roles).find(k => roles[k] === "Hero")
+            || (data.length ? data.reduce((b,c) => c.s > b.s ? c : b, data[0]).hex : "#b8703a");
+          const accentCol = Object.keys(roles).find(k => roles[k] === "Accent")
+            || (data.length && data.length > 1 ? data.filter(c => c.hex !== heroCol).reduce((b,c) => c.s > b.s ? c : b, data[0]).hex : "#2a7a7a");
+          const txtCol = Object.keys(roles).find(k => roles[k] === "Text")
+            || (data.length ? data.reduce((b,c) => c.l < b.l ? c : b, data[0]).hex : "#1a1a2e");
+          const neutralCol = Object.keys(roles).find(k => roles[k] === "Neutral")
+            || (data.length ? data.reduce((b,c) => { const sc = Math.abs(c.l - 50) + (100 - c.s); const sb = Math.abs(b.l - 50) + (100 - b.s); return sc < sb ? c : b; }, data[0]).hex : "#888888");
+
+          const tipBanner = !rolesAssigned && (
+            <div style={{
+              marginBottom:14, padding:"12px 16px",
+              background:"#fff8f0", border:"1px solid #f0c060",
+              borderRadius:6, fontSize:10, color:"#8a5000", lineHeight:1.6
+            }}>
+              <strong>Tip:</strong> Assign colour roles in the <strong>Colour Jobs</strong> tab for best results.
+              We're using our best guess from your palette for now.
+            </div>
+          );
+
+          const templateCardStyle = {
+            background:"#fff", border:"1px solid #e4ddd4",
+            borderRadius:8, overflow:"hidden", marginBottom:14
+          };
+          const descStyle = {
+            padding:"14px 18px", fontSize:10, color:"#888",
+            lineHeight:1.7, borderTop:"1px solid #f0ece8"
+          };
+
+          return (
+            <div>
+              <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+                <strong style={{ color:"#555" }}>Brand Templates</strong>
+                {" "}— Live mockups using your palette colours and selected typography.
+                Change colours, fix issues, reassign roles, or switch fonts — everything updates instantly.
+                {selectedFont && (
+                  <span style={{ color:"#b8703a" }}> Using <strong>{selectedFont.name}</strong> font pair.</span>
+                )}
+              </div>
+              {tipBanner}
+
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(380px, 1fr))", gap:14 }}>
+
+                {/* Business Card */}
+                <div style={templateCardStyle}>
+                  <div style={{
+                    padding:"28px 32px", background:bgCol,
+                    display:"flex", flexDirection:"column", justifyContent:"space-between",
+                    minHeight:200, position:"relative"
+                  }}>
+                    <div style={{ width:36, height:4, background:heroCol, borderRadius:2, marginBottom:16 }}/>
+                    <div>
+                      <div style={{ fontFamily:headingFont, fontSize:20, color:txtCol, marginBottom:4, fontWeight:600 }}>Jane Doe</div>
+                      <div style={{ fontFamily:bodyFont, fontSize:11, color:txtCol, opacity:.7, marginBottom:14 }}>Creative Director</div>
+                    </div>
+                    <div style={{ borderTop:`1px solid ${neutralCol}40`, paddingTop:12 }}>
+                      <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.6, lineHeight:1.8 }}>
+                        hello@yourbrand.com<br/>
+                        +1 (555) 123-4567<br/>
+                        www.yourbrand.com
+                      </div>
+                    </div>
+                    <div style={{
+                      position:"absolute", top:0, right:0, width:48, height:"100%",
+                      background:heroCol, borderRadius:"0"
+                    }}/>
+                  </div>
+                  <div style={descStyle}>
+                    <strong>Business Card</strong> — Background uses <em>bg</em>, stripe uses <em>hero</em>, text uses <em>text</em>, divider uses <em>neutral</em>.
+                  </div>
+                </div>
+
+                {/* Social Post */}
+                <div style={templateCardStyle}>
+                  <div style={{
+                    width:"100%", aspectRatio:"1/1", background:heroCol,
+                    display:"flex", flexDirection:"column", alignItems:"center",
+                    justifyContent:"center", padding:"32px 28px", position:"relative",
+                    maxHeight: 380,
+                  }}>
+                    <div style={{
+                      fontFamily:headingFont, fontSize:28, color:textOn(heroCol),
+                      textAlign:"center", fontWeight:700, marginBottom:12, lineHeight:1.3
+                    }}>Big Announcement</div>
+                    <div style={{
+                      fontFamily:bodyFont, fontSize:12, color:textOn(heroCol),
+                      textAlign:"center", opacity:.85, marginBottom:20, lineHeight:1.6, maxWidth:260
+                    }}>Something exciting is coming. Stay tuned for updates and be the first to know.</div>
+                    <div style={{
+                      background:accentCol, color:textOn(accentCol),
+                      fontFamily:bodyFont, fontSize:10, letterSpacing:".1em",
+                      textTransform:"uppercase", padding:"10px 24px", borderRadius:4,
+                      boxShadow:"0 2px 8px rgba(0,0,0,.15)"
+                    }}>Learn More</div>
+                    <div style={{
+                      position:"absolute", bottom:16, fontFamily:bodyFont,
+                      fontSize:9, color:textOn(heroCol), opacity:.5
+                    }}>@yourbrand</div>
+                  </div>
+                  <div style={descStyle}>
+                    <strong>Social Post</strong> — Instagram square format. Background uses <em>hero</em>, CTA button uses <em>accent</em>.
+                  </div>
+                </div>
+
+                {/* Website Hero */}
+                <div style={templateCardStyle}>
+                  <div style={{ background:bgCol, minHeight:280 }}>
+                    {/* Nav */}
+                    <div style={{
+                      display:"flex", justifyContent:"space-between", alignItems:"center",
+                      padding:"12px 24px", borderBottom:`1px solid ${neutralCol}30`
+                    }}>
+                      <div style={{ fontFamily:headingFont, fontSize:14, color:txtCol, fontWeight:600 }}>YourBrand</div>
+                      <div style={{ display:"flex", gap:16 }}>
+                        {["About","Services","Contact"].map(item => (
+                          <span key={item} style={{ fontFamily:bodyFont, fontSize:10, color:txtCol, opacity:.6, cursor:"default" }}>{item}</span>
+                        ))}
+                        <span style={{
+                          fontFamily:bodyFont, fontSize:9, color:textOn(accentCol),
+                          background:accentCol, padding:"4px 12px", borderRadius:3,
+                          letterSpacing:".08em", textTransform:"uppercase"
+                        }}>Get Started</span>
+                      </div>
+                    </div>
+                    {/* Hero section */}
+                    <div style={{ padding:"40px 24px 32px", textAlign:"center" }}>
+                      <div style={{
+                        fontFamily:headingFont, fontSize:28, color:txtCol,
+                        fontWeight:700, marginBottom:10, lineHeight:1.3
+                      }}>Build Something Beautiful</div>
+                      <div style={{
+                        fontFamily:bodyFont, fontSize:12, color:txtCol,
+                        opacity:.65, lineHeight:1.7, maxWidth:400, margin:"0 auto 20px"
+                      }}>We help brands stand out with thoughtful design and strategic thinking. Let us bring your vision to life.</div>
+                      <div style={{ display:"flex", gap:10, justifyContent:"center" }}>
+                        <div style={{
+                          background:heroCol, color:textOn(heroCol),
+                          fontFamily:bodyFont, fontSize:10, letterSpacing:".1em",
+                          textTransform:"uppercase", padding:"10px 22px", borderRadius:4,
+                          boxShadow:"0 2px 8px rgba(0,0,0,.12)"
+                        }}>Get Started</div>
+                        <div style={{
+                          background:"transparent", color:txtCol,
+                          fontFamily:bodyFont, fontSize:10, letterSpacing:".1em",
+                          textTransform:"uppercase", padding:"10px 22px", borderRadius:4,
+                          border:`1px solid ${neutralCol}`
+                        }}>Learn More</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={descStyle}>
+                    <strong>Website Hero</strong> — Nav bar + hero section. Primary CTA uses <em>hero</em>, secondary uses <em>neutral</em> border, nav CTA uses <em>accent</em>.
+                  </div>
+                </div>
+
+                {/* Email Signature */}
+                <div style={templateCardStyle}>
+                  <div style={{ padding:"24px 28px", background:bgCol }}>
+                    <div style={{ display:"flex", gap:16, alignItems:"flex-start" }}>
+                      <div style={{
+                        width:56, height:56, borderRadius:"50%", background:heroCol,
+                        flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center",
+                        boxShadow:"0 2px 8px rgba(0,0,0,.1)"
+                      }}>
+                        <span style={{ fontFamily:headingFont, fontSize:22, color:textOn(heroCol), fontWeight:600 }}>J</span>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily:headingFont, fontSize:16, color:txtCol, fontWeight:600, marginBottom:2 }}>Jane Doe</div>
+                        <div style={{ fontFamily:bodyFont, fontSize:10, color:accentCol, marginBottom:8 }}>Creative Director at YourBrand</div>
+                        <div style={{ width:32, height:2, background:heroCol, borderRadius:1, marginBottom:8 }}/>
+                        <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.6, lineHeight:1.8 }}>
+                          +1 (555) 123-4567 · hello@yourbrand.com
+                        </div>
+                        <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5, marginTop:2 }}>
+                          www.yourbrand.com
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={descStyle}>
+                    <strong>Email Signature</strong> — Avatar uses <em>hero</em>, title uses <em>accent</em>, text on <em>bg</em> background.
+                  </div>
+                </div>
+
+                {/* Invoice */}
+                <div style={templateCardStyle}>
+                  <div style={{ background:bgCol, padding:"24px 28px" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+                      <div>
+                        <div style={{ fontFamily:headingFont, fontSize:18, color:txtCol, fontWeight:600 }}>INVOICE</div>
+                        <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5, marginTop:4 }}>#INV-2024-0042</div>
+                      </div>
+                      <div style={{ textAlign:"right" }}>
+                        <div style={{ fontFamily:headingFont, fontSize:12, color:heroCol, fontWeight:600 }}>YourBrand</div>
+                        <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5, lineHeight:1.6 }}>123 Design Street<br/>New York, NY 10001</div>
+                      </div>
+                    </div>
+                    <div style={{ borderTop:`1px solid ${neutralCol}40`, marginBottom:12 }}/>
+                    {/* Line items */}
+                    <div style={{ marginBottom:12 }}>
+                      {[
+                        ["Brand Strategy Workshop", "2", "$950.00", "$1,900.00"],
+                        ["Logo Design Package", "1", "$2,400.00", "$2,400.00"],
+                        ["Brand Guidelines Document", "1", "$800.00", "$800.00"],
+                      ].map(([desc, qty, rate, total], idx) => (
+                        <div key={idx} style={{
+                          display:"flex", justifyContent:"space-between", alignItems:"center",
+                          padding:"8px 0", borderBottom:`1px solid ${neutralCol}20`,
+                          fontFamily:bodyFont, fontSize:10, color:txtCol
+                        }}>
+                          <span style={{ flex:2 }}>{desc}</span>
+                          <span style={{ flex:.5, textAlign:"center", opacity:.6 }}>{qty}</span>
+                          <span style={{ flex:1, textAlign:"right", opacity:.6 }}>{rate}</span>
+                          <span style={{ flex:1, textAlign:"right", fontWeight:500 }}>{total}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{
+                      display:"flex", justifyContent:"flex-end", alignItems:"center",
+                      gap:20, padding:"10px 0"
+                    }}>
+                      <span style={{ fontFamily:bodyFont, fontSize:11, color:txtCol, opacity:.6 }}>Total Due</span>
+                      <span style={{ fontFamily:headingFont, fontSize:20, color:heroCol, fontWeight:700 }}>$5,100.00</span>
+                    </div>
+                    <div style={{
+                      marginTop:12, padding:"8px 14px", background:`${accentCol}15`,
+                      borderRadius:4, fontFamily:bodyFont, fontSize:9,
+                      color:accentCol, textAlign:"center"
+                    }}>Payment due within 30 days · Thank you for your business</div>
+                  </div>
+                  <div style={descStyle}>
+                    <strong>Invoice</strong> — Header and totals use <em>hero</em>, line dividers use <em>neutral</em>, payment note uses <em>accent</em>.
+                  </div>
+                </div>
+
+                {/* Letterhead */}
+                <div style={templateCardStyle}>
+                  <div style={{
+                    background:bgCol, padding:"28px 32px", minHeight:320,
+                    display:"flex", flexDirection:"column", position:"relative"
+                  }}>
+                    <div style={{
+                      position:"absolute", top:0, left:0, width:"100%", height:5,
+                      background:`linear-gradient(90deg, ${heroCol}, ${accentCol})`
+                    }}/>
+                    <div style={{
+                      display:"flex", justifyContent:"space-between", alignItems:"center",
+                      marginBottom:28, paddingTop:8
+                    }}>
+                      <div style={{ fontFamily:headingFont, fontSize:16, color:txtCol, fontWeight:600 }}>YourBrand</div>
+                      <div style={{ fontFamily:bodyFont, fontSize:8, color:txtCol, opacity:.5, textAlign:"right", lineHeight:1.6 }}>
+                        123 Design Street · New York, NY 10001<br/>hello@yourbrand.com · (555) 123-4567
+                      </div>
+                    </div>
+                    <div style={{ fontFamily:bodyFont, fontSize:10, color:txtCol, opacity:.6, marginBottom:8 }}>
+                      April 1, 2026
+                    </div>
+                    <div style={{ fontFamily:bodyFont, fontSize:10, color:txtCol, opacity:.6, marginBottom:16 }}>
+                      Dear Valued Client,
+                    </div>
+                    <div style={{
+                      fontFamily:bodyFont, fontSize:10, color:txtCol, opacity:.7,
+                      lineHeight:1.85, marginBottom:20, flex:1
+                    }}>
+                      Thank you for choosing YourBrand. We are thrilled to partner with you on this
+                      exciting project. Our team is committed to delivering exceptional results that
+                      exceed your expectations and elevate your brand presence.
+                    </div>
+                    <div style={{ borderTop:`1px solid ${neutralCol}30`, paddingTop:14, marginTop:"auto" }}>
+                      <div style={{ fontFamily:headingFont, fontSize:11, color:heroCol, fontWeight:600, marginBottom:2 }}>Jane Doe</div>
+                      <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5 }}>Creative Director</div>
+                    </div>
+                  </div>
+                  <div style={descStyle}>
+                    <strong>Letterhead</strong> — Top gradient uses <em>hero</em> to <em>accent</em>, body on <em>bg</em>, signature in <em>hero</em> colour.
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          );
+        })()}
 
       </div>
     </div>
