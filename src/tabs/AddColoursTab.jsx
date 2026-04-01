@@ -136,6 +136,65 @@ export default function AddColoursTab({ suggestions, colors, onAdd, onLoadPreset
         </div>
       </div>
 
+      {/* ── EyeDropper section ───────────────────────────────────────── */}
+      {'EyeDropper' in window && (
+        <div className="card">
+          <div
+            style={{
+              fontFamily:    'var(--ps-font-ui)',
+              fontSize:      'var(--ps-text-xs)',
+              fontWeight:    700,
+              color:         'var(--ps-text-tertiary)',
+              letterSpacing: '.08em',
+              marginBottom:  12,
+            }}
+          >
+            PICK FROM SCREEN
+          </div>
+          <button
+            onClick={async () => {
+              try {
+                const ed = new window.EyeDropper();
+                const { sRGBHex } = await ed.open();
+                onAdd(sRGBHex);
+              } catch {
+                // user cancelled — do nothing
+              }
+            }}
+            style={{
+              display:      'flex',
+              alignItems:   'center',
+              gap:          8,
+              background:   'var(--ps-bg-subtle)',
+              border:       '1px solid var(--ps-border)',
+              borderRadius: 'var(--ps-radius-md)',
+              padding:      '8px 16px',
+              fontFamily:   'var(--ps-font-ui)',
+              fontSize:     'var(--ps-text-sm)',
+              fontWeight:   500,
+              color:        'var(--ps-text-secondary)',
+              cursor:       'pointer',
+              transition:   'background .15s, border-color .15s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background    = 'var(--ps-accent-subtle)';
+              e.currentTarget.style.borderColor   = 'var(--ps-accent)';
+              e.currentTarget.style.color         = 'var(--ps-accent)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background    = 'var(--ps-bg-subtle)';
+              e.currentTarget.style.borderColor   = 'var(--ps-border)';
+              e.currentTarget.style.color         = 'var(--ps-text-secondary)';
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M13.354 1.354a1.207 1.207 0 0 0-1.708 0L9.5 3.5 8.146 2.146a.5.5 0 0 0-.707.708L8.793 4.2 2.5 10.5 1 15l4.5-1.5 6.3-6.293 1.346 1.347a.5.5 0 0 0 .708-.708L12.5 6.5l2.146-2.146a1.207 1.207 0 0 0 0-1.708l-1.292-1.292zM2.914 13.086l.586-1.757 1.171 1.171-1.757.586z"/>
+            </svg>
+            Pick colour from screen
+          </button>
+        </div>
+      )}
+
       {/* ── Suggestions section ───────────────────────────────────────── */}
       {suggestions.length === 0 ? (
         <div
