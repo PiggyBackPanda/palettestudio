@@ -619,55 +619,6 @@ function ExportCard({ title, description, children }) {
         </div>
       </div>
       {children}
-
-      {/* ── Card 4: Tailwind Config ─────────────────────────────────────── */}
-      <ExportCard
-        title="Tailwind CSS Config"
-        description="Add your palette to tailwind.config.js. Includes the full tint & shade scale for each colour."
-      >
-        <pre
-          style={{
-            background:    '#18181B',
-            color:         '#e4e4e7',
-            borderRadius:  'var(--ps-radius-lg)',
-            padding:       '14px 16px',
-            fontSize:      11,
-            lineHeight:    1.6,
-            overflowX:     'auto',
-            overflowY:     'auto',
-            maxHeight:     240,
-            margin:        0,
-            fontFamily:    'var(--ps-font-mono)',
-            whiteSpace:    'pre',
-            letterSpacing: '.02em',
-          }}
-        >
-          {generateTailwindConfig(colors, roles, scales)}
-        </pre>
-
-        <button
-          onClick={handleTailwindCopy}
-          style={{
-            background:    twCopied ? 'var(--ps-success)' : 'var(--ps-accent)',
-            color:         'var(--ps-accent-text)',
-            border:        'none',
-            borderRadius:  'var(--ps-radius-md)',
-            padding:       '9px 20px',
-            fontFamily:    'var(--ps-font-ui)',
-            fontSize:      'var(--ps-text-sm)',
-            fontWeight:    500,
-            cursor:        'pointer',
-            letterSpacing: '.02em',
-            transition:    'background .2s',
-            alignSelf:     'flex-start',
-          }}
-          onMouseEnter={e => { if (!twCopied) e.currentTarget.style.background = 'var(--ps-accent-hover)'; }}
-          onMouseLeave={e => { if (!twCopied) e.currentTarget.style.background = 'var(--ps-accent)'; }}
-        >
-          {twCopied ? '✓ Copied!' : 'Copy to Clipboard'}
-        </button>
-      </ExportCard>
-
     </div>
   );
 }
@@ -1023,6 +974,54 @@ export default function ExportTab({ colors, roles, issues, score, scales }) {
         >
           ↓ Download PNG
         </ActionBtn>
+      </ExportCard>
+
+      {/* ── Card 4: Tailwind Config ─────────────────────────────────────── */}
+      <ExportCard
+        title="Tailwind CSS Config"
+        description="Add your palette to tailwind.config.js. Includes the full tint & shade scale for each colour."
+      >
+        <pre
+          style={{
+            background:    '#18181B',
+            color:         '#e4e4e7',
+            borderRadius:  'var(--ps-radius-lg)',
+            padding:       '14px 16px',
+            fontSize:      11,
+            lineHeight:    1.6,
+            overflowX:     'auto',
+            overflowY:     'auto',
+            maxHeight:     240,
+            margin:        0,
+            fontFamily:    'var(--ps-font-mono)',
+            whiteSpace:    'pre',
+            letterSpacing: '.02em',
+          }}
+        >
+          {generateTailwindConfig(colors, roles, scales)}
+        </pre>
+
+        <button
+          onClick={handleTailwindCopy}
+          style={{
+            background:    twCopied ? 'var(--ps-success)' : 'var(--ps-accent)',
+            color:         'var(--ps-accent-text)',
+            border:        'none',
+            borderRadius:  'var(--ps-radius-md)',
+            padding:       '9px 20px',
+            fontFamily:    'var(--ps-font-ui)',
+            fontSize:      'var(--ps-text-sm)',
+            fontWeight:    500,
+            cursor:        'pointer',
+            letterSpacing: '.02em',
+            transition:    'background .2s',
+            alignSelf:     'flex-start',
+          }}
+          onMouseEnter={e => { if (!twCopied) e.currentTarget.style.background = 'var(--ps-accent-hover)'; }}
+          onMouseLeave={e => { if (!twCopied) e.currentTarget.style.background = 'var(--ps-accent)'; }}
+        >
+          {twCopied ? '✓ Copied!' : 'Copy to Clipboard'}
+        </button>
       </ExportCard>
 
     </div>
