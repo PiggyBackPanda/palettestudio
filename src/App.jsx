@@ -18,7 +18,9 @@ import ColourBlindTab  from './tabs/ColourBlindTab';
 import ColourNamesTab  from './tabs/ColourNamesTab';
 import RolesTab        from './tabs/RolesTab';
 import ExportTab      from './tabs/ExportTab';
-import MockupsTab     from './tabs/MockupsTab';
+import MockupsTab          from './tabs/MockupsTab';
+import TypographyTab       from './tabs/TypographyTab';
+import BrandTemplatesTab   from './tabs/BrandTemplatesTab';
 
 export default function App() {
   const [tab,            setTab]            = useState('issues');
@@ -27,6 +29,7 @@ export default function App() {
   const [shareCopied,    setShareCopied]    = useState(false);
   const [sharePopupUrl,  setSharePopupUrl]  = useState(null);
   const [showShortcuts,  setShowShortcuts]  = useState(false);
+  const [selectedFont,   setSelectedFont]   = useState(null);
 
   const palette = usePalette();
 
@@ -420,6 +423,22 @@ export default function App() {
           <MockupsTab
             roles={roles}
             colors={colors}
+            onNavigate={setTab}
+          />
+        )}
+        {tab === 'typography' && (
+          <TypographyTab
+            colors={colors}
+            roles={roles}
+            selectedFont={selectedFont}
+            onSelectFont={setSelectedFont}
+          />
+        )}
+        {tab === 'templates' && (
+          <BrandTemplatesTab
+            colors={colors}
+            roles={roles}
+            selectedFont={selectedFont}
             onNavigate={setTab}
           />
         )}
