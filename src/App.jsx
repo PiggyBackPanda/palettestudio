@@ -48,7 +48,7 @@ export default function App() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Keyboard shortcuts ──────────────────────────────────────────────────────
-  useKeyboardShortcuts({ undo, redo, saveSlot, generateRandomPalette, setTab });
+  useKeyboardShortcuts({ undo, redo, saveSlot, generateRandomPalette, setTab, tabs: TABS });
 
   // ── Close shortcuts panel on Escape ────────────────────────────────────────
   useEffect(() => {
@@ -90,13 +90,7 @@ export default function App() {
     { keys: ['Ctrl', 'Shift', 'Z'], desc: 'Redo' },
     { keys: ['Ctrl', 'S'],          desc: 'Save palette' },
     { keys: ['Ctrl', 'R'],          desc: 'Random palette' },
-    { keys: ['1'],                  desc: 'Issues & Fixes tab' },
-    { keys: ['2'],                  desc: 'Readability tab' },
-    { keys: ['3'],                  desc: 'Add Colours tab' },
-    { keys: ['4'],                  desc: 'Colour Blindness tab' },
-    { keys: ['5'],                  desc: 'Colour Jobs tab' },
-    { keys: ['6'],                  desc: 'Export tab' },
-    { keys: ['7'],                  desc: 'Mockups tab' },
+    ...TABS.map((t, i) => ({ keys: [String(i + 1)], desc: `${t.label} tab` })),
   ];
 
   return (

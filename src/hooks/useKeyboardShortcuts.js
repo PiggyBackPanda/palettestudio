@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export function useKeyboardShortcuts({ undo, redo, saveSlot, generateRandomPalette, setTab }) {
+export function useKeyboardShortcuts({ undo, redo, saveSlot, generateRandomPalette, setTab, tabs }) {
   useEffect(() => {
     const handleKeyDown = (e) => {
       const ctrl = e.ctrlKey || e.metaKey;
@@ -37,23 +37,15 @@ export function useKeyboardShortcuts({ undo, redo, saveSlot, generateRandomPalet
           active.tagName === 'TEXTAREA' ||
           active.contentEditable === 'true');
 
-      if (!inInput) {
-        const tabMap = {
-          '1': 'issues',
-          '2': 'readability',
-          '3': 'addcolours',
-          '4': 'colourblind',
-          '5': 'roles',
-          '6': 'export',
-          '7': 'mockups',
-        };
-        if (tabMap[e.key]) {
-          setTab(tabMap[e.key]);
+      if (!inInput && tabs) {
+        const idx = parseInt(e.key, 10) - 1;
+        if (idx >= 0 && idx < tabs.length) {
+          setTab(tabs[idx].key);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, saveSlot, generateRandomPalette, setTab]);
+  }, [undo, redo, saveSlot, generateRandomPalette, setTab, tabs]);
 }
