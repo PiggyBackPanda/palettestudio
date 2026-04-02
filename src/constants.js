@@ -4,13 +4,12 @@ export const TABS = [
   { key: 'issues',      label: 'Issues' },
   { key: 'readability', label: 'Readability' },
   { key: 'roles',       label: 'Roles' },
-  { key: 'mockups',     label: 'Mockups' },
+  { key: 'mockups',     label: 'Templates' },
   { key: 'export',      label: 'Export' },
   { key: 'addcolours',  label: 'Add Colours' },
   { key: 'colourblind', label: 'Accessibility' },
   { key: 'colournames', label: 'Names' },
   { key: 'typography',  label: 'Typography' },
-  { key: 'templates',   label: 'Templates' },
 ];
 
 export const FONT_PAIRS = [
