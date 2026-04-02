@@ -32,10 +32,84 @@ export default function AddColoursTab({ suggestions, colors, onAdd, onLoadPreset
             fontWeight:   700,
             color:        'var(--ps-text-tertiary)',
             letterSpacing: '.08em',
-            marginBottom:  12,
+            marginBottom:  6,
           }}
         >
-          START FROM A PRESET
+          INDUSTRY THEMES
+        </div>
+
+        <div
+          style={{
+            display:         'flex',
+            gap:             10,
+            overflowX:       'auto',
+            paddingBottom:   6,
+            scrollbarWidth:  'thin',
+            marginBottom:    16,
+          }}
+        >
+          {PRESETS.slice(0, 10).map((preset, i) => {
+            const isActive = activePreset === i;
+            return (
+              <button
+                key={i}
+                onClick={() => handleLoadPreset(preset, i)}
+                title={`Load ${preset.name}`}
+                style={{
+                  width:         140,
+                  minWidth:      140,
+                  border:        isActive ? '2px solid var(--ps-accent)' : '1px solid var(--ps-border)',
+                  borderRadius:  'var(--ps-radius-lg)',
+                  overflow:      'hidden',
+                  background:    isActive ? 'var(--ps-accent-subtle)' : 'var(--ps-bg-surface)',
+                  cursor:        'pointer',
+                  padding:       0,
+                  textAlign:     'left',
+                  boxShadow:     'var(--ps-shadow-sm)',
+                  transition:    'box-shadow .15s, transform .15s',
+                  flexShrink:    0,
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.boxShadow = 'var(--ps-shadow-md)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.boxShadow = 'var(--ps-shadow-sm)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <div style={{ display: 'flex', height: 20 }}>
+                  {preset.colors.map((hex, j) => (
+                    <div key={j} style={{ flex: 1, background: hex }} />
+                  ))}
+                </div>
+                <div style={{ padding: '10px 12px' }}>
+                  <div style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-sm)', fontWeight: 600, color: 'var(--ps-text-primary)', marginBottom: 4 }}>
+                    {preset.name}
+                  </div>
+                  <div style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-xs)', color: 'var(--ps-text-tertiary)', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                    {preset.personality}
+                  </div>
+                </div>
+                <div style={{ padding: '0 12px 10px', fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-xs)', color: 'var(--ps-accent)' }}>
+                  Use this palette →
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          style={{
+            fontFamily:   'var(--ps-font-ui)',
+            fontSize:     'var(--ps-text-xs)',
+            fontWeight:   700,
+            color:        'var(--ps-text-tertiary)',
+            letterSpacing: '.08em',
+            marginBottom:  6,
+          }}
+        >
+          INSPIRED BY ICONIC BRANDS
         </div>
 
         <div
@@ -47,12 +121,13 @@ export default function AddColoursTab({ suggestions, colors, onAdd, onLoadPreset
             scrollbarWidth:  'thin',
           }}
         >
-          {PRESETS.map((preset, i) => {
-            const isActive = activePreset === i;
+          {PRESETS.slice(10).map((preset, i) => {
+            const idx = i + 10;
+            const isActive = activePreset === idx;
             return (
               <button
-                key={i}
-                onClick={() => handleLoadPreset(preset, i)}
+                key={idx}
+                onClick={() => handleLoadPreset(preset, idx)}
                 title={`Load ${preset.name}`}
                 style={{
                   width:         140,
