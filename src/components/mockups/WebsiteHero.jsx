@@ -5,8 +5,9 @@ import { textOn } from '../../utils/colourMath';
  * All colours sourced exclusively from the pre-computed `palette` object.
  * No hardcoded brand colours — every value flows through buildPalette().
  */
-export default function WebsiteHero({ palette }) {
+export default function WebsiteHero({ palette, brandInfo = {} }) {
   const { hero, accent, neutral, background, text } = palette;
+  const { companyName = 'Palette Studio' } = brandInfo;
 
   const navText   = textOn(hero);
   const btnText   = textOn(accent);
@@ -51,7 +52,7 @@ export default function WebsiteHero({ palette }) {
               letterSpacing:  '.04em',
             }}
           >
-            PS
+            {companyName.slice(0, 2).toUpperCase()}
           </div>
           <span
             style={{
@@ -61,7 +62,7 @@ export default function WebsiteHero({ palette }) {
               letterSpacing: '.02em',
             }}
           >
-            Palette Studio
+            {companyName}
           </span>
         </div>
 
@@ -186,7 +187,7 @@ export default function WebsiteHero({ palette }) {
             letterSpacing: '.08em',
           }}
         >
-          yourwebsite.com
+          www.{companyName.toLowerCase().replace(/\s+/g, '')}.com
         </span>
       </div>
     </div>

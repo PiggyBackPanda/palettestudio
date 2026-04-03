@@ -11,23 +11,17 @@ import ImageExtractor from './components/ImageExtractor';
 import SaveSlots      from './components/SaveSlots';
 import WelcomeModal   from './components/WelcomeModal';
 
-import IssuesTab      from './tabs/IssuesTab';
-import ReadabilityTab from './tabs/ReadabilityTab';
-import AddColoursTab  from './tabs/AddColoursTab';
-import ColourBlindTab  from './tabs/ColourBlindTab';
-import ColourNamesTab  from './tabs/ColourNamesTab';
+import DiagnoseTab     from './tabs/DiagnoseTab';
+import ColoursTab      from './tabs/ColoursTab';
 import RolesTab        from './tabs/RolesTab';
-import ExportTab      from './tabs/ExportTab';
-import MockupsTab          from './tabs/MockupsTab';
-import TypographyTab       from './tabs/TypographyTab';
-import ColourScalesTab     from './tabs/ColourScalesTab';
-import ExportTokensTab     from './tabs/ExportTokensTab';
-import BrandGuideTab       from './tabs/BrandGuideTab';
-import CompetitorTab       from './tabs/CompetitorTab';
-import EditMockupsTab      from './tabs/EditMockupsTab';
+import TypographyTab   from './tabs/TypographyTab';
+import MockupsTab      from './tabs/MockupsTab';
+import ExportTab       from './tabs/ExportTab';
+import BrandGuideTab   from './tabs/BrandGuideTab';
+import CompetitorTab   from './tabs/CompetitorTab';
 
 export default function App() {
-  const [tab,            setTab]            = useState('issues');
+  const [tab,            setTab]            = useState('diagnose');
   const [picker,         setPicker]         = useState('#888888');
   const [cvdType,        setCvdType]        = useState('protanopia');
   const [shareCopied,    setShareCopied]    = useState(false);
@@ -169,20 +163,14 @@ export default function App() {
           <div className="ps-tab-fade" />
         </div>
 
-        {tab === 'issues' && <IssuesTab issues={issues} colors={colors} fixedCodes={fixedCodes} fromImage={fromImage} warnCount={warnCount} onFix={applyFix} />}
-        {tab === 'readability' && <ReadabilityTab colors={colors} />}
-        {tab === 'addcolours' && <AddColoursTab suggestions={suggestions} colors={colors} onAdd={addColor} onLoadPreset={loadPreset} />}
-        {tab === 'colourblind' && <ColourBlindTab colors={colors} cvdType={cvdType} setCvdType={setCvdType} />}
-        {tab === 'colournames' && <ColourNamesTab colors={colors} />}
+        {tab === 'diagnose' && <DiagnoseTab issues={issues} colors={colors} fixedCodes={fixedCodes} fromImage={fromImage} warnCount={warnCount} onFix={applyFix} cvdType={cvdType} setCvdType={setCvdType} />}
+        {tab === 'colours' && <ColoursTab suggestions={suggestions} colors={colors} roles={roles} scales={scales} onAdd={addColor} onLoadPreset={loadPreset} />}
         {tab === 'roles' && <RolesTab colors={colors} roles={roles} autoReasons={autoReasons} onSetRole={setRole} onChooseForMe={chooseForMe} onClearRoles={clearRoles} />}
-        {tab === 'export' && <ExportTab colors={colors} roles={roles} score={score} issues={issues} scales={scales} />}
-        {tab === 'mockups' && <MockupsTab roles={roles} colors={colors} onNavigate={setTab} selectedFont={selectedFont} />}
         {tab === 'typography' && <TypographyTab colors={colors} roles={roles} selectedFont={selectedFont} onSelectFont={setSelectedFont} />}
-        {tab === 'scales' && <ColourScalesTab colors={colors} roles={roles} scales={scales} />}
-        {tab === 'tokens' && <ExportTokensTab colors={colors} roles={roles} selectedFont={selectedFont} />}
+        {tab === 'mockups' && <MockupsTab roles={roles} colors={colors} onNavigate={setTab} selectedFont={selectedFont} />}
+        {tab === 'export' && <ExportTab colors={colors} roles={roles} score={score} issues={issues} scales={scales} selectedFont={selectedFont} />}
         {tab === 'guide' && <BrandGuideTab colors={colors} roles={roles} selectedFont={selectedFont} />}
         {tab === 'competitor' && <CompetitorTab colors={colors} />}
-        {tab === 'editor' && <EditMockupsTab colors={colors} roles={roles} selectedFont={selectedFont} onNavigate={setTab} />}
       </main>
 
       <WelcomeModal onClose={() => {}} onLoadExample={() => loadPreset(PRESETS[0])} />

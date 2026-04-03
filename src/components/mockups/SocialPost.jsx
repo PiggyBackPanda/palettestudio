@@ -4,8 +4,9 @@ import { textOn } from '../../utils/colourMath';
  * Social media post mockup — 1:1 square, 360×360px.
  * All colours sourced exclusively from the pre-computed `palette` object.
  */
-export default function SocialPost({ palette }) {
+export default function SocialPost({ palette, brandInfo = {} }) {
   const { hero, accent, neutral, background, text } = palette;
+  const { companyName = 'Your Brand', tagline = 'A single line that captures what you do.' } = brandInfo;
 
   const dotColor   = textOn(hero);
 
@@ -71,7 +72,7 @@ export default function SocialPost({ palette }) {
             lineHeight:  1.15,
           }}
         >
-          Your Brand
+          {companyName}
         </div>
 
         {/* Tagline */}
@@ -86,7 +87,7 @@ export default function SocialPost({ palette }) {
             letterSpacing: '.04em',
           }}
         >
-          A single line that captures what you do.
+          {tagline}
         </div>
 
         {/* Thin divider */}

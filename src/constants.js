@@ -1,20 +1,14 @@
 export const DEFAULTS = ['#2D4A6B', '#E8734A', '#F5E6C8', '#1A1A2E'];
 
 export const TABS = [
-  { key: 'issues',      label: 'Issues' },
-  { key: 'readability', label: 'Readability' },
-  { key: 'roles',       label: 'Roles' },
-  { key: 'mockups',     label: 'Templates' },
-  { key: 'export',      label: 'Export' },
-  { key: 'addcolours',  label: 'Add Colours' },
-  { key: 'colourblind', label: 'Accessibility' },
-  { key: 'colournames', label: 'Names' },
-  { key: 'typography',  label: 'Typography' },
-  { key: 'scales',      label: 'Colour Scales' },
-  { key: 'tokens',      label: 'Export Tokens' },
-  { key: 'guide',       label: 'Brand Guide' },
-  { key: 'competitor',  label: 'Competitor' },
-  { key: 'editor',      label: 'Edit Mockups' },
+  { key: 'diagnose',   label: 'Diagnose' },
+  { key: 'colours',    label: 'Colours' },
+  { key: 'roles',      label: 'Roles' },
+  { key: 'typography', label: 'Typography' },
+  { key: 'mockups',    label: 'Templates' },
+  { key: 'export',     label: 'Export' },
+  { key: 'guide',      label: 'Brand Guide' },
+  { key: 'competitor', label: 'Competitor' },
 ];
 
 export const FONT_PAIRS = [

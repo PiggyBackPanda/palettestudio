@@ -12,6 +12,7 @@ import html2canvas from 'html2canvas';
 import { hexToRgb, rgbToHsl } from '../utils/colourMath';
 import { ROLE_COL, ROLE_DESC } from '../utils/autoRoles';
 import { getColourName } from '../utils/colourNames';
+import ExportTokensTab from './ExportTokensTab';
 
 // ─── Shared colour-data helper ────────────────────────────────────────────────
 // All values derived from existing utils — no duplicated math.
@@ -665,7 +666,7 @@ function ActionBtn({ onClick, disabled, loading, loadingLabel, children, error }
 }
 
 // ─── Main export tab ──────────────────────────────────────────────────────────
-export default function ExportTab({ colors, roles, issues, score, scales }) {
+export default function ExportTab({ colors, roles, issues, score, scales, selectedFont }) {
   // PDF state
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError,   setPdfError]   = useState('');
@@ -1023,6 +1024,11 @@ export default function ExportTab({ colors, roles, issues, score, scales }) {
           {twCopied ? '✓ Copied!' : 'Copy to Clipboard'}
         </button>
       </ExportCard>
+
+      {/* ── Design Tokens section ──────────────────────────────────────── */}
+      <div style={{ marginTop: 8 }}>
+        <ExportTokensTab colors={colors} roles={roles} selectedFont={selectedFont} />
+      </div>
 
     </div>
   );

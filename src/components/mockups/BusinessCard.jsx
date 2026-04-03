@@ -4,8 +4,9 @@ import { textOn } from '../../utils/colourMath';
  * Business card mockup — 504×288px (3.5×2in at 2×).
  * All colours sourced exclusively from the pre-computed `palette` object.
  */
-export default function BusinessCard({ palette }) {
+export default function BusinessCard({ palette, brandInfo = {} }) {
   const { hero, accent, neutral, background, text } = palette;
+  const { companyName = 'Your Brand', personName = 'Your Name', personTitle = 'Brand Designer', email = 'hello@yourbrand.com', phone = '+00 000 000 000' } = brandInfo;
 
   const heroText  = textOn(hero);
   const logoText  = textOn(accent);
@@ -55,7 +56,7 @@ export default function BusinessCard({ palette }) {
             flexShrink:     0,
           }}
         >
-          PS
+          {companyName.slice(0, 2).toUpperCase()}
         </div>
 
         {/* Brand name */}
@@ -69,7 +70,7 @@ export default function BusinessCard({ palette }) {
             lineHeight:  1.2,
           }}
         >
-          Your Brand
+          {companyName}
         </div>
       </div>
 
@@ -94,7 +95,7 @@ export default function BusinessCard({ palette }) {
             lineHeight: 1.2,
           }}
         >
-          Your Name
+          {personName}
         </div>
 
         {/* Job title */}
@@ -106,7 +107,7 @@ export default function BusinessCard({ palette }) {
             letterSpacing: '.06em',
           }}
         >
-          Brand Designer
+          {personTitle}
         </div>
 
         {/* Divider */}
@@ -128,11 +129,11 @@ export default function BusinessCard({ palette }) {
             letterSpacing: '.02em',
           }}
         >
-          hello@yourbrand.com
+          {email}
           <br />
-          yourwebsite.com
+          www.{companyName.toLowerCase().replace(/\s+/g, '')}.com
           <br />
-          +00 000 000 000
+          {phone}
         </div>
       </div>
     </div>

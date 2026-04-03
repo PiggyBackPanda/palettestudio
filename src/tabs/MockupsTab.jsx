@@ -82,28 +82,30 @@ function RoleSummary({ roles, onNavigate }) {
   );
 }
 
-function EmailSignature({ palette, headingFont, bodyFont }) {
+function EmailSignature({ palette, headingFont, bodyFont, brandInfo = {} }) {
   const { hero, accent, background: bg, text } = palette;
+  const { companyName = 'YourBrand', personName = 'Jane Doe', personTitle = 'Creative Director', email = 'hello@yourbrand.com', phone = '+1 (555) 123-4567' } = brandInfo;
   return (
     <div style={{ padding: '24px 28px', background: bg, borderRadius: 8, width: '100%', maxWidth: 480, fontFamily: bodyFont }}>
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
         <div style={{ width: 56, height: 56, borderRadius: '50%', background: hero, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,.1)' }}>
-          <span style={{ fontFamily: headingFont, fontSize: 22, color: textOn(hero), fontWeight: 600 }}>J</span>
+          <span style={{ fontFamily: headingFont, fontSize: 22, color: textOn(hero), fontWeight: 600 }}>{personName.charAt(0)}</span>
         </div>
         <div>
-          <div style={{ fontFamily: headingFont, fontSize: 16, color: text, fontWeight: 600, marginBottom: 2 }}>Jane Doe</div>
-          <div style={{ fontSize: 10, color: accent, marginBottom: 8 }}>Creative Director at YourBrand</div>
+          <div style={{ fontFamily: headingFont, fontSize: 16, color: text, fontWeight: 600, marginBottom: 2 }}>{personName}</div>
+          <div style={{ fontSize: 10, color: accent, marginBottom: 8 }}>{personTitle} at {companyName}</div>
           <div style={{ width: 32, height: 2, background: hero, borderRadius: 1, marginBottom: 8 }} />
-          <div style={{ fontSize: 9, color: text, opacity: .6, lineHeight: 1.8 }}>+1 (555) 123-4567 · hello@yourbrand.com</div>
-          <div style={{ fontSize: 9, color: text, opacity: .5, marginTop: 2 }}>www.yourbrand.com</div>
+          <div style={{ fontSize: 9, color: text, opacity: .6, lineHeight: 1.8 }}>{phone} · {email}</div>
+          <div style={{ fontSize: 9, color: text, opacity: .5, marginTop: 2 }}>www.{companyName.toLowerCase().replace(/\s+/g, '')}.com</div>
         </div>
       </div>
     </div>
   );
 }
 
-function InvoiceMockup({ palette, headingFont, bodyFont }) {
+function InvoiceMockup({ palette, headingFont, bodyFont, brandInfo = {} }) {
   const { hero, accent, background: bg, text, neutral } = palette;
+  const { companyName = 'YourBrand' } = brandInfo;
   const items = [['Brand Strategy Workshop', '2', '$950.00', '$1,900.00'], ['Logo Design Package', '1', '$2,400.00', '$2,400.00'], ['Brand Guidelines Document', '1', '$800.00', '$800.00']];
   return (
     <div style={{ background: bg, padding: '24px 28px', borderRadius: 8, width: '100%', maxWidth: 480, fontFamily: bodyFont }}>
@@ -113,7 +115,7 @@ function InvoiceMockup({ palette, headingFont, bodyFont }) {
           <div style={{ fontSize: 9, color: text, opacity: .5, marginTop: 4 }}>#INV-2024-0042</div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: headingFont, fontSize: 12, color: hero, fontWeight: 600 }}>YourBrand</div>
+          <div style={{ fontFamily: headingFont, fontSize: 12, color: hero, fontWeight: 600 }}>{companyName}</div>
           <div style={{ fontSize: 9, color: text, opacity: .5, lineHeight: 1.6 }}>123 Design Street<br />New York, NY 10001</div>
         </div>
       </div>
@@ -137,21 +139,22 @@ function InvoiceMockup({ palette, headingFont, bodyFont }) {
   );
 }
 
-function Letterhead({ palette, headingFont, bodyFont }) {
+function Letterhead({ palette, headingFont, bodyFont, brandInfo = {} }) {
   const { hero, accent, background: bg, text, neutral } = palette;
+  const { companyName = 'YourBrand', personName = 'Jane Doe', personTitle = 'Creative Director', email = 'hello@yourbrand.com', phone = '+1 (555) 123-4567' } = brandInfo;
   return (
     <div style={{ background: bg, padding: '28px 32px', minHeight: 320, display: 'flex', flexDirection: 'column', position: 'relative', borderRadius: 8, width: '100%', maxWidth: 480, fontFamily: bodyFont }}>
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 5, background: `linear-gradient(90deg, ${hero}, ${accent})`, borderRadius: '8px 8px 0 0' }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, paddingTop: 8 }}>
-        <div style={{ fontFamily: headingFont, fontSize: 16, color: text, fontWeight: 600 }}>YourBrand</div>
-        <div style={{ fontSize: 8, color: text, opacity: .5, textAlign: 'right', lineHeight: 1.6 }}>123 Design Street · New York, NY 10001<br />hello@yourbrand.com · (555) 123-4567</div>
+        <div style={{ fontFamily: headingFont, fontSize: 16, color: text, fontWeight: 600 }}>{companyName}</div>
+        <div style={{ fontSize: 8, color: text, opacity: .5, textAlign: 'right', lineHeight: 1.6 }}>123 Design Street · New York, NY 10001<br />{email} · {phone}</div>
       </div>
       <div style={{ fontSize: 10, color: text, opacity: .6, marginBottom: 8 }}>April 1, 2026</div>
       <div style={{ fontSize: 10, color: text, opacity: .6, marginBottom: 16 }}>Dear Valued Client,</div>
-      <div style={{ fontSize: 10, color: text, opacity: .7, lineHeight: 1.85, marginBottom: 20, flex: 1 }}>Thank you for choosing YourBrand. We are thrilled to partner with you on this exciting project. Our team is committed to delivering exceptional results that exceed your expectations and elevate your brand presence.</div>
+      <div style={{ fontSize: 10, color: text, opacity: .7, lineHeight: 1.85, marginBottom: 20, flex: 1 }}>Thank you for choosing {companyName}. We are thrilled to partner with you on this exciting project. Our team is committed to delivering exceptional results that exceed your expectations and elevate your brand presence.</div>
       <div style={{ borderTop: `1px solid ${neutral}30`, paddingTop: 14, marginTop: 'auto' }}>
-        <div style={{ fontFamily: headingFont, fontSize: 11, color: hero, fontWeight: 600, marginBottom: 2 }}>Jane Doe</div>
-        <div style={{ fontSize: 9, color: text, opacity: .5 }}>Creative Director</div>
+        <div style={{ fontFamily: headingFont, fontSize: 11, color: hero, fontWeight: 600, marginBottom: 2 }}>{personName}</div>
+        <div style={{ fontSize: 9, color: text, opacity: .5 }}>{personTitle}</div>
       </div>
     </div>
   );
@@ -168,7 +171,14 @@ const MOCKUP_TYPES = [
 
 export default function MockupsTab({ roles, colors, onNavigate, selectedFont }) {
   const [activeKey, setActiveKey] = useState('website');
+  const [companyName, setCompanyName] = useState('YourBrand');
+  const [tagline, setTagline] = useState('Build Something Beautiful');
+  const [personName, setPersonName] = useState('Jane Doe');
+  const [personTitle, setPersonTitle] = useState('Creative Director');
+  const [email, setEmail] = useState('hello@yourbrand.com');
+  const [phone, setPhone] = useState('+1 (555) 123-4567');
   const palette = buildPalette(colors, roles);
+  const brandInfo = { companyName, tagline, personName, personTitle, email, phone };
   const ready = hasMinimumRoles(roles);
   const active = MOCKUP_TYPES.find(m => m.key === activeKey);
   const activePair = selectedFont || FONT_PAIRS[0];
@@ -185,6 +195,27 @@ export default function MockupsTab({ roles, colors, onNavigate, selectedFont }) 
         </p>
         <p style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-xs)', color: 'var(--ps-text-tertiary)', lineHeight: 1.55, margin: 0, fontStyle: 'italic' }}>These are design previews, not production templates. They help you feel confident your colours work in the real world.</p>
       </div>
+      <div className="card" style={{ padding: '16px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-sm)', fontWeight: 600, color: 'var(--ps-text-primary)' }}>Brand Details</div>
+          <button onClick={() => { setCompanyName('YourBrand'); setTagline('Build Something Beautiful'); setPersonName('Jane Doe'); setPersonTitle('Creative Director'); setEmail('hello@yourbrand.com'); setPhone('+1 (555) 123-4567'); }} style={{ background: 'none', border: 'none', fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-xs)', color: 'var(--ps-accent)', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>Reset to defaults</button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
+          {[
+            { label: 'Company', value: companyName, set: setCompanyName },
+            { label: 'Tagline', value: tagline, set: setTagline },
+            { label: 'Name', value: personName, set: setPersonName },
+            { label: 'Title', value: personTitle, set: setPersonTitle },
+            { label: 'Email', value: email, set: setEmail },
+            { label: 'Phone', value: phone, set: setPhone },
+          ].map(f => (
+            <div key={f.label}>
+              <div style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 9, color: 'var(--ps-text-tertiary)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.08em' }}>{f.label}</div>
+              <input value={f.value} onChange={e => f.set(e.target.value)} style={{ width: '100%', fontFamily: 'var(--ps-font-mono)', fontSize: 'var(--ps-text-xs)', padding: '5px 8px', border: '1px solid var(--ps-border)', borderRadius: 'var(--ps-radius-sm)', background: 'var(--ps-bg-subtle)', color: 'var(--ps-text-primary)', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="card">
         <div style={{ display: 'inline-flex', background: 'var(--ps-bg-subtle)', borderRadius: 'var(--ps-radius-lg)', padding: 3, gap: 3, marginBottom: 20, flexWrap: 'wrap' }}>
           {MOCKUP_TYPES.map(m => {
@@ -198,12 +229,12 @@ export default function MockupsTab({ roles, colors, onNavigate, selectedFont }) 
           {ready ? (
             <>
               <div style={{ maxWidth: '100%', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
-                {activeKey === 'website' && <WebsiteHero palette={palette} />}
-                {activeKey === 'social' && <SocialPost palette={palette} />}
-                {activeKey === 'bizcard' && <BusinessCard palette={palette} />}
-                {activeKey === 'email' && <EmailSignature palette={palette} headingFont={headingFont} bodyFont={bodyFont} />}
-                {activeKey === 'invoice' && <InvoiceMockup palette={palette} headingFont={headingFont} bodyFont={bodyFont} />}
-                {activeKey === 'letter' && <Letterhead palette={palette} headingFont={headingFont} bodyFont={bodyFont} />}
+                {activeKey === 'website' && <WebsiteHero palette={palette} brandInfo={brandInfo} />}
+                {activeKey === 'social' && <SocialPost palette={palette} brandInfo={brandInfo} />}
+                {activeKey === 'bizcard' && <BusinessCard palette={palette} brandInfo={brandInfo} />}
+                {activeKey === 'email' && <EmailSignature palette={palette} headingFont={headingFont} bodyFont={bodyFont} brandInfo={brandInfo} />}
+                {activeKey === 'invoice' && <InvoiceMockup palette={palette} headingFont={headingFont} bodyFont={bodyFont} brandInfo={brandInfo} />}
+                {activeKey === 'letter' && <Letterhead palette={palette} headingFont={headingFont} bodyFont={bodyFont} brandInfo={brandInfo} />}
               </div>
               <div style={{ fontFamily: 'var(--ps-font-ui)', marginTop: 12, fontSize: 9, color: 'var(--ps-text-tertiary)', letterSpacing: '.06em', textAlign: 'center' }}>{active?.caption}</div>
             </>

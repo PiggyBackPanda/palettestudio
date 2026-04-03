@@ -36,7 +36,7 @@ export default function ImageExtractor({ onAddColors, onNavigate }) {
 
   const useColors = () => {
     onAddColors(extracted, true);
-    if (onNavigate) onNavigate('issues');
+    if (onNavigate) onNavigate('diagnose');
   };
 
   const borderColor = isDragging ? 'var(--ps-accent)' : 'var(--ps-border-strong)';
