@@ -1293,6 +1293,19 @@ export default function PaletteFixer() {
   const [competitorImage, setCompetitorImage] = useState(null);
   const [tokenFormat, setTokenFormat] = useState("css");
   const [copyConfirm, setCopyConfirm] = useState("");
+  const [compDragging, setCompDragging] = useState(false);
+  const [compExtracting, setCompExtracting] = useState(false);
+  const compFileRef = useRef();
+
+  const copyToClipboard = (text, key) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopyConfirm(key);
+      setTimeout(() => setCopyConfirm(""), 2000);
+    }).catch(() => {
+      setCopyConfirm(key + "-fail");
+      setTimeout(() => setCopyConfirm(""), 2000);
+    });
+  };
 
   const issues   = diagnose(colors);
   const score    = healthScore(issues);
@@ -1623,8 +1636,17 @@ export default function PaletteFixer() {
         {/* Tabs */}
         <div style={{
           borderBottom:"1px solid #e4ddd4", marginBottom:16,
-          display:"flex", background:"#fff", borderRadius:"6px 6px 0 0",
-          padding:"0 6px", overflowX:"auto"
+          position:"relative", borderRadius:"6px 6px 0 0", background:"#fff"
+        }}>
+          <div style={{
+            position:"absolute", right:0, top:0, bottom:0, width:32, zIndex:2,
+            pointerEvents:"none", borderRadius:"0 6px 0 0",
+            background:"linear-gradient(90deg, transparent, #fff 80%)"
+          }} />
+        <div style={{
+          display:"flex",
+          padding:"0 6px", overflowX:"auto",
+          scrollbarWidth:"none", msOverflowStyle:"none"
         }}>
           {TABS.map(t => (
             <button key={t.key} className={`tb ${tab === t.key ? "on" : ""}`}
@@ -1638,6 +1660,7 @@ export default function PaletteFixer() {
               )}
             </button>
           ))}
+        </div>
         </div>
 
         {/* Issues & Fixes tab */}
@@ -2451,10 +2474,7 @@ export default function PaletteFixer() {
               scale.map(s => `  --${slugify(roleName)}-${s.step}: ${s.hex};`)
             );
             const css = `:root {\n${lines.join("\n")}\n}`;
-            navigator.clipboard.writeText(css).then(() => {
-              setCopyConfirm("css-scales");
-              setTimeout(() => setCopyConfirm(""), 2000);
-            });
+            copyToClipboard(css, "css-scales");
           };
 
           const copyTailwind = () => {
@@ -2465,10 +2485,7 @@ export default function PaletteFixer() {
               for (const s of scale) obj[key][s.step] = s.hex;
             }
             const tw = `// tailwind.config.js\nmodule.exports = {\n  theme: {\n    extend: {\n      colors: ${JSON.stringify(obj, null, 8).replace(/^/gm, "      ").trim()}\n    }\n  }\n}`;
-            navigator.clipboard.writeText(tw).then(() => {
-              setCopyConfirm("tw-scales");
-              setTimeout(() => setCopyConfirm(""), 2000);
-            });
+            copyToClipboard(tw, "tw-scales");
           };
 
           return (
@@ -2483,11 +2500,11 @@ export default function PaletteFixer() {
               <div style={{ display:"flex", gap:8, marginBottom:16 }}>
                 <button className="tb on" style={{ fontSize:10, padding:"6px 14px", cursor:"pointer" }}
                   onClick={copyCss}>
-                  {copyConfirm === "css-scales" ? "Copied!" : "Copy all as CSS"}
+                  {copyConfirm === "css-scales" ? "Copied!" : copyConfirm === "css-scales-fail" ? "Failed!" : "Copy all as CSS"}
                 </button>
                 <button className="tb on" style={{ fontSize:10, padding:"6px 14px", cursor:"pointer" }}
                   onClick={copyTailwind}>
-                  {copyConfirm === "tw-scales" ? "Copied!" : "Copy as Tailwind"}
+                  {copyConfirm === "tw-scales" ? "Copied!" : copyConfirm === "tw-scales-fail" ? "Failed!" : "Copy as Tailwind"}
                 </button>
               </div>
 
@@ -2654,12 +2671,7 @@ export default function PaletteFixer() {
             }).join("");
           };
 
-          const handleCopy = () => {
-            navigator.clipboard.writeText(code).then(() => {
-              setCopyConfirm("tokens-copied");
-              setTimeout(() => setCopyConfirm(""), 2000);
-            });
-          };
+          const handleCopy = () => copyToClipboard(code, "tokens-copied");
 
           return (
             <div>
@@ -2697,11 +2709,13 @@ export default function PaletteFixer() {
               <div style={{ position:"relative" }}>
                 <button onClick={handleCopy} style={{
                   position:"absolute", top:10, right:10, fontSize:9,
-                  padding:"4px 12px", background:"#f5f0e8", border:"1px solid #e4ddd4",
+                  padding:"4px 12px", background: copyConfirm === "tokens-copied" ? "#2a7a7a" : copyConfirm === "tokens-copied-fail" ? "#c04040" : "#f5f0e8",
+                  border:"1px solid #e4ddd4",
                   borderRadius:4, cursor:"pointer", fontFamily:"'DM Mono', monospace",
-                  color: copyConfirm === "tokens-copied" ? "#2a7a7a" : "#888"
+                  color: copyConfirm === "tokens-copied" || copyConfirm === "tokens-copied-fail" ? "#fff" : "#888",
+                  transition:"all .18s"
                 }}>
-                  {copyConfirm === "tokens-copied" ? "Copied!" : "Copy"}
+                  {copyConfirm === "tokens-copied" ? "Copied!" : copyConfirm === "tokens-copied-fail" ? "Failed!" : "Copy"}
                 </button>
                 <pre style={{
                   background:"#1a1a2e", color:"#e8e0d4", padding:"20px 18px",
@@ -2950,10 +2964,6 @@ export default function PaletteFixer() {
 
         {/* Competitor Analysis tab */}
         {tab === "competitor" && (() => {
-          const compFileRef = useRef();
-          const [compDragging, setCompDragging] = useState(false);
-          const [compExtracting, setCompExtracting] = useState(false);
-
           const processCompFile = async (file) => {
             if (!file || !file.type.startsWith("image/")) return;
             setCompExtracting(true);
@@ -3521,14 +3531,14 @@ export default function PaletteFixer() {
                   }}>
                     <div style={{ width:36, height:4, background:heroCol, borderRadius:2, marginBottom:16 }}/>
                     <div>
-                      <div style={{ fontFamily:headingFont, fontSize:20, color:txtCol, marginBottom:4, fontWeight:600 }}>Jane Doe</div>
-                      <div style={{ fontFamily:bodyFont, fontSize:11, color:txtCol, opacity:.7, marginBottom:14 }}>Creative Director</div>
+                      <div style={{ fontFamily:headingFont, fontSize:20, color:txtCol, marginBottom:4, fontWeight:600 }}>{personName}</div>
+                      <div style={{ fontFamily:bodyFont, fontSize:11, color:txtCol, opacity:.7, marginBottom:14 }}>{personTitle}</div>
                     </div>
                     <div style={{ borderTop:`1px solid ${neutralCol}40`, paddingTop:12 }}>
                       <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.6, lineHeight:1.8 }}>
-                        hello@yourbrand.com<br/>
-                        +1 (555) 123-4567<br/>
-                        www.yourbrand.com
+                        {email}<br/>
+                        {phone}<br/>
+                        www.{companyName.toLowerCase().replace(/\s+/g, "")}.com
                       </div>
                     </div>
                     <div style={{
@@ -3552,7 +3562,7 @@ export default function PaletteFixer() {
                     <div style={{
                       fontFamily:headingFont, fontSize:28, color:textOn(heroCol),
                       textAlign:"center", fontWeight:700, marginBottom:12, lineHeight:1.3
-                    }}>Big Announcement</div>
+                    }}>{tagline}</div>
                     <div style={{
                       fontFamily:bodyFont, fontSize:12, color:textOn(heroCol),
                       textAlign:"center", opacity:.85, marginBottom:20, lineHeight:1.6, maxWidth:260
@@ -3566,7 +3576,7 @@ export default function PaletteFixer() {
                     <div style={{
                       position:"absolute", bottom:16, fontFamily:bodyFont,
                       fontSize:9, color:textOn(heroCol), opacity:.5
-                    }}>@yourbrand</div>
+                    }}>@{companyName.toLowerCase().replace(/\s+/g, "")}</div>
                   </div>
                   <div style={descStyle}>
                     <strong>Social Post</strong> — Instagram square format. Background uses <em>hero</em>, CTA button uses <em>accent</em>.
@@ -3581,7 +3591,7 @@ export default function PaletteFixer() {
                       display:"flex", justifyContent:"space-between", alignItems:"center",
                       padding:"12px 24px", borderBottom:`1px solid ${neutralCol}30`
                     }}>
-                      <div style={{ fontFamily:headingFont, fontSize:14, color:txtCol, fontWeight:600 }}>YourBrand</div>
+                      <div style={{ fontFamily:headingFont, fontSize:14, color:txtCol, fontWeight:600 }}>{companyName}</div>
                       <div style={{ display:"flex", gap:16 }}>
                         {["About","Services","Contact"].map(item => (
                           <span key={item} style={{ fontFamily:bodyFont, fontSize:10, color:txtCol, opacity:.6, cursor:"default" }}>{item}</span>
@@ -3598,7 +3608,7 @@ export default function PaletteFixer() {
                       <div style={{
                         fontFamily:headingFont, fontSize:28, color:txtCol,
                         fontWeight:700, marginBottom:10, lineHeight:1.3
-                      }}>Build Something Beautiful</div>
+                      }}>{tagline}</div>
                       <div style={{
                         fontFamily:bodyFont, fontSize:12, color:txtCol,
                         opacity:.65, lineHeight:1.7, maxWidth:400, margin:"0 auto 20px"
@@ -3633,17 +3643,17 @@ export default function PaletteFixer() {
                         flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center",
                         boxShadow:"0 2px 8px rgba(0,0,0,.1)"
                       }}>
-                        <span style={{ fontFamily:headingFont, fontSize:22, color:textOn(heroCol), fontWeight:600 }}>J</span>
+                        <span style={{ fontFamily:headingFont, fontSize:22, color:textOn(heroCol), fontWeight:600 }}>{personName.charAt(0)}</span>
                       </div>
                       <div>
-                        <div style={{ fontFamily:headingFont, fontSize:16, color:txtCol, fontWeight:600, marginBottom:2 }}>Jane Doe</div>
-                        <div style={{ fontFamily:bodyFont, fontSize:10, color:accentCol, marginBottom:8 }}>Creative Director at YourBrand</div>
+                        <div style={{ fontFamily:headingFont, fontSize:16, color:txtCol, fontWeight:600, marginBottom:2 }}>{personName}</div>
+                        <div style={{ fontFamily:bodyFont, fontSize:10, color:accentCol, marginBottom:8 }}>{personTitle} at {companyName}</div>
                         <div style={{ width:32, height:2, background:heroCol, borderRadius:1, marginBottom:8 }}/>
                         <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.6, lineHeight:1.8 }}>
-                          +1 (555) 123-4567 · hello@yourbrand.com
+                          {phone} · {email}
                         </div>
                         <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5, marginTop:2 }}>
-                          www.yourbrand.com
+                          www.{companyName.toLowerCase().replace(/\s+/g, "")}.com
                         </div>
                       </div>
                     </div>
@@ -3662,7 +3672,7 @@ export default function PaletteFixer() {
                         <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5, marginTop:4 }}>#INV-2024-0042</div>
                       </div>
                       <div style={{ textAlign:"right" }}>
-                        <div style={{ fontFamily:headingFont, fontSize:12, color:heroCol, fontWeight:600 }}>YourBrand</div>
+                        <div style={{ fontFamily:headingFont, fontSize:12, color:heroCol, fontWeight:600 }}>{companyName}</div>
                         <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5, lineHeight:1.6 }}>123 Design Street<br/>New York, NY 10001</div>
                       </div>
                     </div>
@@ -3718,9 +3728,9 @@ export default function PaletteFixer() {
                       display:"flex", justifyContent:"space-between", alignItems:"center",
                       marginBottom:28, paddingTop:8
                     }}>
-                      <div style={{ fontFamily:headingFont, fontSize:16, color:txtCol, fontWeight:600 }}>YourBrand</div>
+                      <div style={{ fontFamily:headingFont, fontSize:16, color:txtCol, fontWeight:600 }}>{companyName}</div>
                       <div style={{ fontFamily:bodyFont, fontSize:8, color:txtCol, opacity:.5, textAlign:"right", lineHeight:1.6 }}>
-                        123 Design Street · New York, NY 10001<br/>hello@yourbrand.com · (555) 123-4567
+                        123 Design Street · New York, NY 10001<br/>{email} · {phone}
                       </div>
                     </div>
                     <div style={{ fontFamily:bodyFont, fontSize:10, color:txtCol, opacity:.6, marginBottom:8 }}>
@@ -3733,13 +3743,13 @@ export default function PaletteFixer() {
                       fontFamily:bodyFont, fontSize:10, color:txtCol, opacity:.7,
                       lineHeight:1.85, marginBottom:20, flex:1
                     }}>
-                      Thank you for choosing YourBrand. We are thrilled to partner with you on this
+                      Thank you for choosing {companyName}. We are thrilled to partner with you on this
                       exciting project. Our team is committed to delivering exceptional results that
                       exceed your expectations and elevate your brand presence.
                     </div>
                     <div style={{ borderTop:`1px solid ${neutralCol}30`, paddingTop:14, marginTop:"auto" }}>
-                      <div style={{ fontFamily:headingFont, fontSize:11, color:heroCol, fontWeight:600, marginBottom:2 }}>Jane Doe</div>
-                      <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5 }}>Creative Director</div>
+                      <div style={{ fontFamily:headingFont, fontSize:11, color:heroCol, fontWeight:600, marginBottom:2 }}>{personName}</div>
+                      <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5 }}>{personTitle}</div>
                     </div>
                   </div>
                   <div style={descStyle}>
