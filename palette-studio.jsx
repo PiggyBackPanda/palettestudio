@@ -2539,14 +2539,179 @@ export default function PaletteFixer() {
         })()}
 
         {/* Export Tokens tab */}
-        {tab === "tokens" && (
-          <div>
-            <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
-              <strong style={{ color:"#555" }}>Export Tokens</strong>
-              {" "}— Coming soon.
+        {tab === "tokens" && (() => {
+          const rolesAssigned = Object.keys(roles).length >= 2;
+          const activePair = selectedFont || FONT_PAIRS[0];
+          const slugify = (name) => name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
+          // Build primitive tokens from palette
+          const primitives = colors.map((hex, idx) => {
+            const role = roles[hex];
+            const name = role ? `brand-${slugify(role)}` : `brand-color-${idx + 1}`;
+            return { name, hex };
+          });
+
+          // Build semantic tokens (only if roles assigned)
+          const findByRole = (r) => Object.keys(roles).find(k => roles[k] === r);
+          const heroVar = findByRole("Hero") ? `var(--brand-${slugify("Hero")})` : primitives[0] ? `var(--${primitives[0].name})` : "#000";
+          const accentVar = findByRole("Accent") ? `var(--brand-${slugify("Accent")})` : primitives.length > 1 ? `var(--${primitives[1].name})` : heroVar;
+          const bgVar = findByRole("Background") ? `var(--brand-${slugify("Background")})` : primitives.length > 2 ? `var(--${primitives[2].name})` : "#fff";
+          const textVar = findByRole("Text") ? `var(--brand-${slugify("Text")})` : primitives.length > 3 ? `var(--${primitives[3].name})` : "#1a1a1a";
+          const neutralVar = findByRole("Neutral") ? `var(--brand-${slugify("Neutral")})` : primitives.length > 4 ? `var(--${primitives[4].name})` : "#888";
+
+          const semantics = [
+            { name: "color-action-primary", value: accentVar },
+            { name: "color-action-hover", value: heroVar },
+            { name: "color-surface", value: bgVar },
+            { name: "color-text-primary", value: textVar },
+            { name: "color-text-inverse", value: bgVar },
+            { name: "color-border", value: neutralVar },
+          ];
+
+          const components = [
+            { name: "button-primary-bg", value: "var(--color-action-primary)" },
+            { name: "button-primary-text", value: "var(--color-text-inverse)" },
+            { name: "button-primary-hover", value: "var(--color-action-hover)" },
+            { name: "card-bg", value: "var(--color-surface)" },
+            { name: "card-border", value: "var(--color-border)" },
+            { name: "card-text", value: "var(--color-text-primary)" },
+          ];
+
+          const typoTokens = [
+            { name: "font-heading", value: activePair.heading },
+            { name: "font-body", value: activePair.body },
+          ];
+
+          const generateCSS = () => {
+            let out = "/* Primitive tokens */\n:root {\n";
+            out += primitives.map(t => `  --${t.name}: ${t.hex};`).join("\n");
+            out += "\n\n  /* Typography */\n";
+            out += typoTokens.map(t => `  --${t.name}: ${t.value};`).join("\n");
+            out += "\n\n  /* Semantic tokens */\n";
+            out += semantics.map(t => `  --${t.name}: ${t.value};`).join("\n");
+            out += "\n\n  /* Component tokens */\n";
+            out += components.map(t => `  --${t.name}: ${t.value};`).join("\n");
+            out += "\n}";
+            return out;
+          };
+
+          const generateTailwind = () => {
+            const colorsObj = {};
+            for (const t of primitives) colorsObj[t.name] = t.hex;
+            let out = "// tailwind.config.js\nmodule.exports = {\n  theme: {\n    extend: {\n";
+            out += "      colors: " + JSON.stringify(colorsObj, null, 8).replace(/^/gm, "      ").trim() + ",\n";
+            out += `      fontFamily: {\n        heading: [${activePair.heading}],\n        body: [${activePair.body}],\n      }\n`;
+            out += "    }\n  }\n}";
+            return out;
+          };
+
+          const generateJSON = () => {
+            const obj = {
+              primitive: {},
+              semantic: {},
+              component: {},
+              typography: {},
+            };
+            for (const t of primitives) obj.primitive[t.name] = { value: t.hex, type: "color" };
+            for (const t of semantics) obj.semantic[t.name] = { value: t.value, type: "color" };
+            for (const t of components) obj.component[t.name] = { value: t.value, type: "color" };
+            obj.typography["font-heading"] = { value: activePair.heading, type: "fontFamily" };
+            obj.typography["font-body"] = { value: activePair.body, type: "fontFamily" };
+            return JSON.stringify(obj, null, 2);
+          };
+
+          const generateFigma = () => {
+            const tokens = {};
+            for (const t of primitives) tokens[t.name] = { value: t.hex, type: "color" };
+            for (const t of semantics) tokens[t.name] = { value: t.value, type: "color" };
+            for (const t of components) tokens[t.name] = { value: t.value, type: "color" };
+            tokens["font-heading"] = { value: activePair.heading, type: "fontFamilies" };
+            tokens["font-body"] = { value: activePair.body, type: "fontFamilies" };
+            return JSON.stringify({ "brand-tokens": tokens }, null, 2);
+          };
+
+          const formats = [
+            { key: "css", label: "CSS Custom Properties", gen: generateCSS },
+            { key: "tailwind", label: "Tailwind Config", gen: generateTailwind },
+            { key: "json", label: "JSON Tokens", gen: generateJSON },
+            { key: "figma", label: "Figma Tokens", gen: generateFigma },
+          ];
+
+          const activeFormat = formats.find(f => f.key === tokenFormat) || formats[0];
+          const code = activeFormat.gen();
+
+          const syntaxHighlight = (text) => {
+            // Simple syntax colouring for the code block
+            return text.split("\n").map((line, i) => {
+              let styled = line
+                .replace(/(--[\w-]+)/g, '<span style="color:#b8703a">$1</span>')
+                .replace(/(#[0-9a-fA-F]{3,8})/g, '<span style="color:#2a7a7a">$1</span>')
+                .replace(/("[\w-]+")\s*:/g, '<span style="color:#b8703a">$1</span>:')
+                .replace(/(\/\/.*$|\/\*.*?\*\/)/g, '<span style="color:#aaa">$1</span>')
+                .replace(/\b(var)\(/g, '<span style="color:#606aa0">var</span>(')
+                .replace(/\b(module\.exports|:root)\b/g, '<span style="color:#606aa0">$1</span>');
+              return '<div key="' + i + '">' + styled + '</div>';
+            }).join("");
+          };
+
+          const handleCopy = () => {
+            navigator.clipboard.writeText(code).then(() => {
+              setCopyConfirm("tokens-copied");
+              setTimeout(() => setCopyConfirm(""), 2000);
+            });
+          };
+
+          return (
+            <div>
+              <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+                <strong style={{ color:"#555" }}>Export Tokens</strong>
+                {" "}— Design tokens in a three-tier architecture: primitives (raw values),
+                semantic (purpose-mapped), and component (UI-specific). Select a format and
+                copy to use in your project.
+              </div>
+
+              {!rolesAssigned && (
+                <div style={{
+                  marginBottom:14, padding:"12px 16px",
+                  background:"#fff8f0", border:"1px solid #f0c060",
+                  borderRadius:6, fontSize:10, color:"#8a5000", lineHeight:1.6
+                }}>
+                  <strong>Tip:</strong> Assign colour roles in the <strong>Colour Jobs</strong> tab for more
+                  meaningful token names. We're using positional names (color-1, color-2…) for now.
+                </div>
+              )}
+
+              {/* Format selector */}
+              <div style={{ display:"flex", gap:4, marginBottom:12, flexWrap:"wrap" }}>
+                {formats.map(f => (
+                  <button key={f.key}
+                    className={`tb ${tokenFormat === f.key ? "on" : ""}`}
+                    style={{ fontSize:10, padding:"6px 14px", cursor:"pointer" }}
+                    onClick={() => setTokenFormat(f.key)}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Code block */}
+              <div style={{ position:"relative" }}>
+                <button onClick={handleCopy} style={{
+                  position:"absolute", top:10, right:10, fontSize:9,
+                  padding:"4px 12px", background:"#f5f0e8", border:"1px solid #e4ddd4",
+                  borderRadius:4, cursor:"pointer", fontFamily:"'DM Mono', monospace",
+                  color: copyConfirm === "tokens-copied" ? "#2a7a7a" : "#888"
+                }}>
+                  {copyConfirm === "tokens-copied" ? "Copied!" : "Copy"}
+                </button>
+                <pre style={{
+                  background:"#1a1a2e", color:"#e8e0d4", padding:"20px 18px",
+                  borderRadius:8, fontSize:10, lineHeight:1.7, overflowX:"auto",
+                  fontFamily:"'DM Mono', monospace", margin:0
+                }} dangerouslySetInnerHTML={{ __html: syntaxHighlight(code) }} />
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Brand Guide tab */}
         {tab === "guide" && (
