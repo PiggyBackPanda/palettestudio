@@ -20,6 +20,11 @@ import RolesTab        from './tabs/RolesTab';
 import ExportTab      from './tabs/ExportTab';
 import MockupsTab          from './tabs/MockupsTab';
 import TypographyTab       from './tabs/TypographyTab';
+import ColourScalesTab     from './tabs/ColourScalesTab';
+import ExportTokensTab     from './tabs/ExportTokensTab';
+import BrandGuideTab       from './tabs/BrandGuideTab';
+import CompetitorTab       from './tabs/CompetitorTab';
+import EditMockupsTab      from './tabs/EditMockupsTab';
 
 export default function App() {
   const [tab,            setTab]            = useState('issues');
@@ -173,6 +178,11 @@ export default function App() {
         {tab === 'export' && <ExportTab colors={colors} roles={roles} score={score} issues={issues} scales={scales} />}
         {tab === 'mockups' && <MockupsTab roles={roles} colors={colors} onNavigate={setTab} selectedFont={selectedFont} />}
         {tab === 'typography' && <TypographyTab colors={colors} roles={roles} selectedFont={selectedFont} onSelectFont={setSelectedFont} />}
+        {tab === 'scales' && <ColourScalesTab colors={colors} roles={roles} scales={scales} />}
+        {tab === 'tokens' && <ExportTokensTab colors={colors} roles={roles} selectedFont={selectedFont} />}
+        {tab === 'guide' && <BrandGuideTab colors={colors} roles={roles} selectedFont={selectedFont} />}
+        {tab === 'competitor' && <CompetitorTab colors={colors} />}
+        {tab === 'editor' && <EditMockupsTab colors={colors} roles={roles} selectedFont={selectedFont} onNavigate={setTab} />}
       </main>
 
       <WelcomeModal onClose={() => {}} onLoadExample={() => loadPreset(PRESETS[0])} />

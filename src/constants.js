@@ -10,6 +10,11 @@ export const TABS = [
   { key: 'colourblind', label: 'Accessibility' },
   { key: 'colournames', label: 'Names' },
   { key: 'typography',  label: 'Typography' },
+  { key: 'scales',      label: 'Colour Scales' },
+  { key: 'tokens',      label: 'Export Tokens' },
+  { key: 'guide',       label: 'Brand Guide' },
+  { key: 'competitor',  label: 'Competitor' },
+  { key: 'editor',      label: 'Edit Mockups' },
 ];
 
 export const FONT_PAIRS = [
