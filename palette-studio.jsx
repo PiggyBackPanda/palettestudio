@@ -2411,14 +2411,132 @@ export default function PaletteFixer() {
 
         {/* Brand Templates tab */}
         {/* Colour Scales tab */}
-        {tab === "scales" && (
-          <div>
-            <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
-              <strong style={{ color:"#555" }}>Colour Scales</strong>
-              {" "}— Coming soon.
+        {tab === "scales" && (() => {
+          const STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
+          const STEP_LIGHTNESS = [97, 93, 86, 76, 64, 50, 38, 26, 16, 10];
+
+          const generateScale = (hex) => {
+            const { r, g, b } = hexToRgb(hex);
+            const { h, s } = rgbToHsl(r, g, b);
+            return STEPS.map((step, i) => {
+              const targetL = STEP_LIGHTNESS[i];
+              // Gently reduce saturation toward extremes to avoid neon tints / muddy shades
+              const distFromMid = Math.abs(i - 4.5) / 4.5; // 0 at centre, 1 at edges
+              const adjS = Math.max(0, s * (1 - distFromMid * 0.35));
+              const stepHex = hslToHex(h, adjS, targetL);
+              return { step, hex: stepHex };
+            });
+          };
+
+          const findClosestStep = (scale, originalHex) => {
+            let minDist = Infinity, closest = 500;
+            for (const s of scale) {
+              const d = deltaE(s.hex, originalHex);
+              if (d < minDist) { minDist = d; closest = s.step; }
+            }
+            return closest;
+          };
+
+          const scales = colors.map((hex, idx) => {
+            const roleName = roles[hex] || `color-${idx + 1}`;
+            const scale = generateScale(hex);
+            const closestStep = findClosestStep(scale, hex);
+            return { hex, roleName, scale, closestStep };
+          });
+
+          const slugify = (name) => name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
+          const copyCss = () => {
+            const lines = scales.flatMap(({ roleName, scale }) =>
+              scale.map(s => `  --${slugify(roleName)}-${s.step}: ${s.hex};`)
+            );
+            const css = `:root {\n${lines.join("\n")}\n}`;
+            navigator.clipboard.writeText(css).then(() => {
+              setCopyConfirm("css-scales");
+              setTimeout(() => setCopyConfirm(""), 2000);
+            });
+          };
+
+          const copyTailwind = () => {
+            const obj = {};
+            for (const { roleName, scale } of scales) {
+              const key = slugify(roleName);
+              obj[key] = {};
+              for (const s of scale) obj[key][s.step] = s.hex;
+            }
+            const tw = `// tailwind.config.js\nmodule.exports = {\n  theme: {\n    extend: {\n      colors: ${JSON.stringify(obj, null, 8).replace(/^/gm, "      ").trim()}\n    }\n  }\n}`;
+            navigator.clipboard.writeText(tw).then(() => {
+              setCopyConfirm("tw-scales");
+              setTimeout(() => setCopyConfirm(""), 2000);
+            });
+          };
+
+          return (
+            <div>
+              <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+                <strong style={{ color:"#555" }}>Colour Scales</strong>
+                {" "}— A 10-step tint/shade ramp for each colour in your palette. Lightness is perceptually
+                spaced from near-white (step 50) to near-black (step 900), with saturation gently
+                reduced at the extremes to keep tints clean and shades rich.
+              </div>
+
+              <div style={{ display:"flex", gap:8, marginBottom:16 }}>
+                <button className="tb on" style={{ fontSize:10, padding:"6px 14px", cursor:"pointer" }}
+                  onClick={copyCss}>
+                  {copyConfirm === "css-scales" ? "Copied!" : "Copy all as CSS"}
+                </button>
+                <button className="tb on" style={{ fontSize:10, padding:"6px 14px", cursor:"pointer" }}
+                  onClick={copyTailwind}>
+                  {copyConfirm === "tw-scales" ? "Copied!" : "Copy as Tailwind"}
+                </button>
+              </div>
+
+              {scales.map(({ hex, roleName, scale, closestStep }, idx) => (
+                <div key={idx} className="card" style={{ marginBottom:14, padding:16 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+                    <div style={{ width:20, height:20, borderRadius:4, background:hex, border:"1px solid #e4ddd4" }} />
+                    <strong style={{ fontFamily:"'DM Mono', monospace", fontSize:12, color:"#555" }}>
+                      {roleName}
+                    </strong>
+                    <span style={{ fontFamily:"'DM Mono', monospace", fontSize:10, color:"#aaa" }}>{hex}</span>
+                  </div>
+                  <div style={{ display:"flex", gap:0, borderRadius:6, overflow:"hidden" }}>
+                    {scale.map(s => {
+                      const isClosest = s.step === closestStep;
+                      return (
+                        <div key={s.step} style={{
+                          flex:1, textAlign:"center", position:"relative",
+                          background: s.hex, padding:"22px 0 8px",
+                          outline: isClosest ? "2px solid #b8703a" : "none",
+                          outlineOffset: isClosest ? -2 : 0,
+                          zIndex: isClosest ? 1 : 0,
+                          borderRadius: isClosest ? 3 : 0,
+                        }}>
+                          <div style={{
+                            fontFamily:"'DM Mono', monospace", fontSize:8, fontWeight:600,
+                            color: textOn(s.hex), marginBottom:2
+                          }}>{s.step}</div>
+                          <div style={{
+                            fontFamily:"'DM Mono', monospace", fontSize:7,
+                            color: textOn(s.hex), opacity:0.75
+                          }}>{s.hex}</div>
+                          {isClosest && (
+                            <div style={{
+                              position:"absolute", top:3, left:"50%", transform:"translateX(-50%)",
+                              fontSize:6, fontFamily:"'DM Mono', monospace", color: textOn(s.hex),
+                              background:"rgba(0,0,0,.15)", padding:"1px 4px", borderRadius:3,
+                              whiteSpace:"nowrap"
+                            }}>closest</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Export Tokens tab */}
         {tab === "tokens" && (
