@@ -769,6 +769,11 @@ const TABS = [
   { key: "roles",       label: "Colour Jobs" },
   { key: "templates",   label: "Brand Templates" },
   { key: "typography",  label: "Typography" },
+  { key: "scales",     label: "Colour Scales" },
+  { key: "tokens",     label: "Export Tokens" },
+  { key: "guide",      label: "Brand Guide" },
+  { key: "competitor", label: "Competitor Analysis" },
+  { key: "editor",     label: "Edit Mockups" },
 ];
 const CVD_TYPES = [
   { key: "protanopia",   label: "Red-blind",   note: "Protanopia -- ~1% of men" },
@@ -1276,6 +1281,18 @@ export default function PaletteFixer() {
   const [locked, setLocked]         = useState(new Set());
   const [generating, setGenerating] = useState(false);
   const [selectedFont, setSelectedFont] = useState(null);
+
+  // New state for feature tabs
+  const [companyName, setCompanyName] = useState("YourBrand");
+  const [tagline, setTagline] = useState("Build Something Beautiful");
+  const [personName, setPersonName] = useState("Jane Doe");
+  const [personTitle, setPersonTitle] = useState("Creative Director");
+  const [email, setEmail] = useState("hello@yourbrand.com");
+  const [phone, setPhone] = useState("+1 (555) 123-4567");
+  const [competitorColors, setCompetitorColors] = useState([]);
+  const [competitorImage, setCompetitorImage] = useState(null);
+  const [tokenFormat, setTokenFormat] = useState("css");
+  const [copyConfirm, setCopyConfirm] = useState("");
 
   const issues   = diagnose(colors);
   const score    = healthScore(issues);
@@ -2393,6 +2410,56 @@ export default function PaletteFixer() {
         })()}
 
         {/* Brand Templates tab */}
+        {/* Colour Scales tab */}
+        {tab === "scales" && (
+          <div>
+            <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+              <strong style={{ color:"#555" }}>Colour Scales</strong>
+              {" "}— Coming soon.
+            </div>
+          </div>
+        )}
+
+        {/* Export Tokens tab */}
+        {tab === "tokens" && (
+          <div>
+            <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+              <strong style={{ color:"#555" }}>Export Tokens</strong>
+              {" "}— Coming soon.
+            </div>
+          </div>
+        )}
+
+        {/* Brand Guide tab */}
+        {tab === "guide" && (
+          <div>
+            <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+              <strong style={{ color:"#555" }}>Brand Guide</strong>
+              {" "}— Coming soon.
+            </div>
+          </div>
+        )}
+
+        {/* Competitor Analysis tab */}
+        {tab === "competitor" && (
+          <div>
+            <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+              <strong style={{ color:"#555" }}>Competitor Analysis</strong>
+              {" "}— Coming soon.
+            </div>
+          </div>
+        )}
+
+        {/* Edit Mockups tab */}
+        {tab === "editor" && (
+          <div>
+            <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+              <strong style={{ color:"#555" }}>Edit Mockups</strong>
+              {" "}— Coming soon.
+            </div>
+          </div>
+        )}
+
         {tab === "templates" && (() => {
           const activePair = selectedFont || FONT_PAIRS[0];
           const headingFont = activePair.heading;
