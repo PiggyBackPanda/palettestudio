@@ -2714,14 +2714,239 @@ export default function PaletteFixer() {
         })()}
 
         {/* Brand Guide tab */}
-        {tab === "guide" && (
-          <div>
-            <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
-              <strong style={{ color:"#555" }}>Brand Guide</strong>
-              {" "}— Coming soon.
+        {tab === "guide" && (() => {
+          const activePair = selectedFont || FONT_PAIRS[0];
+          const headingFont = activePair.heading;
+          const bodyFont = activePair.body;
+          const data = colors.map(hex => { const {r,g,b} = hexToRgb(hex); return { hex, ...rgbToHsl(r,g,b), lum: luminance(r,g,b) }; });
+
+          // Derive role colours
+          const findByRole = (r) => Object.keys(roles).find(k => roles[k] === r);
+          const bgCol = findByRole("Background") || (data.length ? data.reduce((b,c) => c.l > b.l ? c : b, data[0]).hex : "#f5f0e8");
+          const heroCol = findByRole("Hero") || (data.length ? data.reduce((b,c) => c.s > b.s ? c : b, data[0]).hex : "#b8703a");
+          const accentCol = findByRole("Accent") || (data.length > 1 ? data.filter(c => c.hex !== heroCol).reduce((b,c) => c.s > b.s ? c : b, data[0]).hex : "#2a7a7a");
+          const txtCol = findByRole("Text") || (data.length ? data.reduce((b,c) => c.l < b.l ? c : b, data[0]).hex : "#1a1a2e");
+          const neutralCol = findByRole("Neutral") || (data.length ? data.reduce((b,c) => { const sc = Math.abs(c.l-50)+(100-c.s); const sb = Math.abs(b.l-50)+(100-b.s); return sc<sb?c:b; }, data[0]).hex : "#888");
+
+          // Section styling
+          const sectionTitle = (text) => (
+            <div style={{ fontFamily:headingFont, fontSize:20, color:txtCol, fontWeight:700, marginBottom:14, marginTop:28, borderBottom:`2px solid ${heroCol}`, paddingBottom:8 }}>{text}</div>
+          );
+
+          // Generate do/don't rules from contrast ratios
+          const generateRules = () => {
+            const rules = [];
+            const pairs = [
+              { a: "Text", aHex: txtCol, b: "Background", bHex: bgCol },
+              { a: "Hero", aHex: heroCol, b: "Background", bHex: bgCol },
+              { a: "Hero", aHex: heroCol, b: "Accent", bHex: accentCol },
+              { a: "Text", aHex: txtCol, b: "Hero", bHex: heroCol },
+              { a: "Accent", aHex: accentCol, b: "Background", bHex: bgCol },
+            ];
+            for (const p of pairs) {
+              const cr = contrastRatio(p.aHex, p.bHex);
+              if (cr >= 4.5) {
+                rules.push({ type: "do", text: `Use ${p.a} on ${p.b} for body copy (contrast ${cr.toFixed(1)}:1).` });
+              } else if (cr >= 3) {
+                rules.push({ type: "caution", text: `${p.a} on ${p.b} is OK for large text only (contrast ${cr.toFixed(1)}:1).` });
+              } else {
+                rules.push({ type: "dont", text: `Never place ${p.a} directly on ${p.b} (contrast ${cr.toFixed(1)}:1 — fails WCAG).` });
+              }
+              if (rules.length >= 4) break;
+            }
+            return rules;
+          };
+          const usageRules = generateRules();
+
+          // 60-30-10 mapping
+          const proportionMap = [
+            { role: "Background", pct: 60, col: bgCol },
+            { role: "Hero / Accent", pct: 30, col: heroCol },
+            { role: "Pop / CTA", pct: 10, col: accentCol },
+          ];
+
+          // Contrast matrix
+          const contrastPairs = [];
+          for (let i = 0; i < colors.length; i++) {
+            for (let j = i + 1; j < colors.length; j++) {
+              contrastPairs.push({ a: colors[i], b: colors[j], ratio: contrastRatio(colors[i], colors[j]) });
+            }
+          }
+
+          const guideId = "brand-guide-content";
+
+          const handlePrint = () => {
+            // Inject print styles if not already present
+            if (!document.getElementById("brand-guide-print-style")) {
+              const style = document.createElement("style");
+              style.id = "brand-guide-print-style";
+              style.textContent = `@media print { body > * { display: none !important; } #${guideId} { display: block !important; } #${guideId} * { break-inside: avoid; } }`;
+              document.head.appendChild(style);
+            }
+            window.print();
+          };
+
+          return (
+            <div>
+              <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+                <strong style={{ color:"#555" }}>Brand Guide</strong>
+                {" "}— A complete brand guidelines document generated from your palette,
+                roles, and typography. Print or save as PDF for client delivery.
+              </div>
+
+              <div style={{ marginBottom:14 }}>
+                <button className="tb on" style={{ fontSize:10, padding:"6px 14px", cursor:"pointer" }} onClick={handlePrint}>
+                  Print / Save as PDF
+                </button>
+              </div>
+
+              <div id={guideId} style={{
+                background:"#fff", border:"1px solid #e4ddd4", borderRadius:8,
+                padding:"40px 36px", maxWidth:720, margin:"0 auto",
+                fontFamily:bodyFont, color:txtCol, lineHeight:1.8
+              }}>
+                {/* Header */}
+                <div style={{ textAlign:"center", marginBottom:36 }}>
+                  <div style={{ fontFamily:headingFont, fontSize:32, fontWeight:700, color:heroCol, marginBottom:6 }}>Brand Guidelines</div>
+                  <div style={{ fontSize:12, color:neutralCol }}>Generated from Palette Studio</div>
+                </div>
+
+                {/* 1. Brand Colour Palette */}
+                {sectionTitle("1. Brand Colour Palette")}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(160px, 1fr))", gap:12, marginBottom:8 }}>
+                  {colors.map((hex, idx) => {
+                    const {r,g,b} = hexToRgb(hex);
+                    const hsl = rgbToHsl(r,g,b);
+                    const role = roles[hex];
+                    return (
+                      <div key={idx} style={{ background:"#faf8f5", border:"1px solid #e4ddd4", borderRadius:6, overflow:"hidden" }}>
+                        <div style={{ height:48, background:hex }} />
+                        <div style={{ padding:"10px 12px" }}>
+                          {role && <div style={{ fontSize:10, fontWeight:600, color:heroCol, marginBottom:4 }}>{role}</div>}
+                          <div style={{ fontFamily:"'DM Mono', monospace", fontSize:9, color:"#555", lineHeight:1.8 }}>
+                            HEX: {hex}<br/>
+                            RGB: {r}, {g}, {b}<br/>
+                            HSL: {Math.round(hsl.h)}°, {Math.round(hsl.s)}%, {Math.round(hsl.l)}%
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 2. Colour Usage Rules */}
+                {sectionTitle("2. Colour Usage Rules")}
+                <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:8 }}>
+                  {usageRules.map((rule, i) => (
+                    <div key={i} style={{
+                      padding:"10px 14px", borderRadius:6, fontSize:11, lineHeight:1.6,
+                      background: rule.type === "do" ? "#f0f8f0" : rule.type === "caution" ? "#fff8f0" : "#fdf0f0",
+                      border: `1px solid ${rule.type === "do" ? "#a0d0a0" : rule.type === "caution" ? "#f0c060" : "#e0a0a0"}`,
+                      color: rule.type === "do" ? "#2a6a2a" : rule.type === "caution" ? "#8a5000" : "#8a2020",
+                    }}>
+                      <strong>{rule.type === "do" ? "DO" : rule.type === "caution" ? "CAUTION" : "DON'T"}:</strong> {rule.text}
+                    </div>
+                  ))}
+                </div>
+
+                {/* 3. Typography */}
+                {sectionTitle("3. Typography")}
+                <div style={{ marginBottom:8 }}>
+                  <div style={{ marginBottom:16 }}>
+                    <div style={{ fontSize:9, color:neutralCol, textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>Heading — {activePair.heading.replace(/'/g, "")}</div>
+                    <div style={{ fontFamily:headingFont, fontSize:28, fontWeight:700, marginBottom:4 }}>Heading One</div>
+                    <div style={{ fontFamily:headingFont, fontSize:22, fontWeight:600, marginBottom:4 }}>Heading Two</div>
+                    <div style={{ fontFamily:headingFont, fontSize:16, fontWeight:600, marginBottom:4 }}>Subheading</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:9, color:neutralCol, textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>Body — {activePair.body.replace(/'/g, "")}</div>
+                    <div style={{ fontFamily:bodyFont, fontSize:14, marginBottom:4 }}>Body text — The quick brown fox jumps over the lazy dog.</div>
+                    <div style={{ fontFamily:bodyFont, fontSize:11, opacity:0.7, marginBottom:4 }}>Caption text — Secondary information and fine print details.</div>
+                  </div>
+                </div>
+
+                {/* 4. Spacing & Proportion */}
+                {sectionTitle("4. Spacing & Proportion")}
+                <div style={{ fontSize:11, marginBottom:12, opacity:0.7 }}>
+                  The 60-30-10 rule ensures visual hierarchy. Dominant colour covers 60%, secondary 30%, accent 10%.
+                </div>
+                <div style={{ display:"flex", gap:0, borderRadius:6, overflow:"hidden", height:48, marginBottom:8 }}>
+                  {proportionMap.map((p, i) => (
+                    <div key={i} style={{
+                      flex: p.pct, background: p.col, display:"flex", alignItems:"center",
+                      justifyContent:"center", color: textOn(p.col),
+                      fontFamily:"'DM Mono', monospace", fontSize:9
+                    }}>
+                      {p.pct}% — {p.role}
+                    </div>
+                  ))}
+                </div>
+
+                {/* 5. Accessibility */}
+                {sectionTitle("5. Accessibility")}
+                <div style={{ fontSize:11, marginBottom:12, opacity:0.7 }}>
+                  Contrast matrix — WCAG AA requires 4.5:1 for normal text, 3:1 for large text.
+                </div>
+
+                {/* Contrast matrix table */}
+                <div style={{ overflowX:"auto", marginBottom:16 }}>
+                  <table style={{ borderCollapse:"collapse", width:"100%", fontSize:9, fontFamily:"'DM Mono', monospace" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding:"6px 8px", borderBottom:"1px solid #e4ddd4" }}></th>
+                        {colors.map((hex, i) => (
+                          <th key={i} style={{ padding:"6px 4px", borderBottom:"1px solid #e4ddd4", textAlign:"center" }}>
+                            <div style={{ width:16, height:16, borderRadius:3, background:hex, margin:"0 auto 2px", border:"1px solid #e4ddd4" }} />
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {colors.map((hex1, i) => (
+                        <tr key={i}>
+                          <td style={{ padding:"4px 8px", borderBottom:"1px solid #f0ece8" }}>
+                            <div style={{ width:16, height:16, borderRadius:3, background:hex1, border:"1px solid #e4ddd4" }} />
+                          </td>
+                          {colors.map((hex2, j) => {
+                            if (i === j) return <td key={j} style={{ padding:"4px", borderBottom:"1px solid #f0ece8", textAlign:"center", color:"#ccc" }}>—</td>;
+                            const cr = contrastRatio(hex1, hex2);
+                            const pass = cr >= 4.5;
+                            const large = cr >= 3;
+                            return (
+                              <td key={j} style={{
+                                padding:"4px", borderBottom:"1px solid #f0ece8", textAlign:"center",
+                                color: pass ? "#2a6a2a" : large ? "#8a5000" : "#c04040",
+                                fontWeight: pass ? 600 : 400,
+                              }}>
+                                {cr.toFixed(1)}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* CVD simulation thumbnails */}
+                <div style={{ fontSize:11, marginBottom:8, opacity:0.7 }}>Colour-vision deficiency simulation:</div>
+                <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+                  {CVD_TYPES.map(cvd => (
+                    <div key={cvd.key} style={{ textAlign:"center" }}>
+                      <div style={{ fontSize:9, color:neutralCol, marginBottom:4 }}>{cvd.label}</div>
+                      <div style={{ display:"flex", borderRadius:4, overflow:"hidden" }}>
+                        {colors.map((hex, i) => {
+                          const {r,g,b} = hexToRgb(hex);
+                          return <div key={i} style={{ width:24, height:24, background: simulateCVD(r,g,b,cvd.key) }} />;
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Competitor Analysis tab */}
         {tab === "competitor" && (
