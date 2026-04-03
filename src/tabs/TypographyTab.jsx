@@ -227,9 +227,10 @@ export default function TypographyTab({ colors, roles, selectedFont, onSelectFon
                   background:   bgHex,
                   borderRadius: 'var(--ps-radius-lg)',
                   padding:      '16px 20px',
-                  minWidth:     220,
-                  flex:         '0 0 auto',
+                  minWidth:     0,
+                  flex:         '1 1 220px',
                   border:       `1px solid ${txtHex}15`,
+                  overflow:     'hidden',
                 }}
               >
                 <div
