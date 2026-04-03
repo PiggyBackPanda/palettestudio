@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { hexToRgb, rgbToHsl, luminance } from '../utils/colourMath';
 import { FONT_PAIRS } from '../constants';
 
@@ -36,17 +37,20 @@ function scoreFontPair(pair, colors) {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function TypographyTab({ colors, roles, selectedFont, onSelectFont }) {
-  const ranked = FONT_PAIRS
-    .map(p => ({ ...p, score: scoreFontPair(p, colors) }))
-    .sort((a, b) => b.score - a.score);
+  const ranked = useMemo(() =>
+    FONT_PAIRS
+      .map(p => ({ ...p, score: scoreFontPair(p, colors) }))
+      .sort((a, b) => b.score - a.score),
+    [colors]
+  );
 
   const activePair = selectedFont || ranked[0];
 
   // Derive preview colours from roles or palette
-  const data = colors.map(hex => {
+  const data = useMemo(() => colors.map(hex => {
     const { r, g, b } = hexToRgb(hex);
     return { hex, ...rgbToHsl(r, g, b), lum: luminance(r, g, b) };
-  });
+  }), [colors]);
 
   const bgHex =
     Object.keys(roles).find(k => roles[k] === 'Background') ||

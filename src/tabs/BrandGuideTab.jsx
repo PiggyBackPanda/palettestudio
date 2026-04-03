@@ -9,27 +9,8 @@ const CVD_TYPES = [
   { key: 'tritanopia',   label: 'Blue-blind' },
 ];
 
-// ─── Print styles (injected once) ───────────────────────────────────────────
-
-let printStyleInjected = false;
-function injectPrintStyles() {
-  if (printStyleInjected) return;
-  printStyleInjected = true;
-  const style = document.createElement('style');
-  style.textContent = `
-    @media print {
-      body > *:not(#${GUIDE_ID}),
-      body > * * { visibility: hidden; }
-      #${GUIDE_ID},
-      #${GUIDE_ID} * { visibility: visible !important; }
-      #${GUIDE_ID} {
-        position: absolute; left: 0; top: 0; width: 100%;
-        -webkit-print-color-adjust: exact; print-color-adjust: exact;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-}
+// Print styles are handled globally in index.css via @media print rules
+// targeting #ps-brand-guide-printable
 
 // ─── Derive role colours with fallbacks ─────────────────────────────────────
 
@@ -77,7 +58,7 @@ function deriveRoleColours(colors, roles) {
 
 function Section({ title, children }) {
   return (
-    <section style={{ marginBottom: 40 }}>
+    <section className="ps-guide-section" style={{ marginBottom: 40 }}>
       <h2 style={{
         fontFamily: 'var(--ps-font-ui)',
         fontSize: 18,
@@ -110,7 +91,7 @@ function ColourPaletteSection({ colors, roles }) {
           const { h, s, l } = rgbToHsl(r, g, b);
           const roleName = roles[hex] || '—';
           return (
-            <div key={hex} style={{
+            <div key={hex} className="ps-guide-colour-card" style={{
               borderRadius: 'var(--ps-radius-lg)',
               overflow: 'hidden',
               border: '1px solid var(--ps-border)',
@@ -528,8 +509,6 @@ function AccessibilitySection({ colors, roles }) {
 // ─── Main component ─────────────────────────────────────────────────────────
 
 export default function BrandGuideTab({ colors, roles, selectedFont }) {
-  injectPrintStyles();
-
   const roleColours = deriveRoleColours(colors, roles);
 
   return (

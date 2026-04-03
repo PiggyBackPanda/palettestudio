@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { hexToRgb, rgbToHsl, hslToHex, rgbToHex, luminance, textOn } from '../utils/colourMath';
 import { ROLES, ROLE_COL } from '../utils/autoRoles';
 import { FONT_PAIRS } from '../constants';
-import WebsiteHero  from '../components/mockups/WebsiteHero';
-import SocialPost   from '../components/mockups/SocialPost';
-import BusinessCard from '../components/mockups/BusinessCard';
+import WebsiteHero     from '../components/mockups/WebsiteHero';
+import SocialPost      from '../components/mockups/SocialPost';
+import BusinessCard    from '../components/mockups/BusinessCard';
+import EmailSignature  from '../components/mockups/EmailSignature';
+import InvoiceMockup   from '../components/mockups/InvoiceMockup';
+import Letterhead      from '../components/mockups/Letterhead';
 
 // ─── buildPalette ─────────────────────────────────────────────────────────────
 function buildPalette(colors, roles) {
@@ -82,84 +85,6 @@ function RoleSummary({ roles, onNavigate }) {
   );
 }
 
-function EmailSignature({ palette, headingFont, bodyFont, brandInfo = {} }) {
-  const { hero, accent, background: bg, text } = palette;
-  const { companyName = 'YourBrand', personName = 'Jane Doe', personTitle = 'Creative Director', email = 'hello@yourbrand.com', phone = '+1 (555) 123-4567' } = brandInfo;
-  return (
-    <div style={{ padding: '24px 28px', background: bg, borderRadius: 8, width: '100%', maxWidth: 480, fontFamily: bodyFont }}>
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-        <div style={{ width: 56, height: 56, borderRadius: '50%', background: hero, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,.1)' }}>
-          <span style={{ fontFamily: headingFont, fontSize: 22, color: textOn(hero), fontWeight: 600 }}>{personName.charAt(0)}</span>
-        </div>
-        <div>
-          <div style={{ fontFamily: headingFont, fontSize: 16, color: text, fontWeight: 600, marginBottom: 2 }}>{personName}</div>
-          <div style={{ fontSize: 10, color: accent, marginBottom: 8 }}>{personTitle} at {companyName}</div>
-          <div style={{ width: 32, height: 2, background: hero, borderRadius: 1, marginBottom: 8 }} />
-          <div style={{ fontSize: 9, color: text, opacity: .6, lineHeight: 1.8 }}>{phone} · {email}</div>
-          <div style={{ fontSize: 9, color: text, opacity: .5, marginTop: 2 }}>www.{companyName.toLowerCase().replace(/\s+/g, '')}.com</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function InvoiceMockup({ palette, headingFont, bodyFont, brandInfo = {} }) {
-  const { hero, accent, background: bg, text, neutral } = palette;
-  const { companyName = 'YourBrand' } = brandInfo;
-  const items = [['Brand Strategy Workshop', '2', '$950.00', '$1,900.00'], ['Logo Design Package', '1', '$2,400.00', '$2,400.00'], ['Brand Guidelines Document', '1', '$800.00', '$800.00']];
-  return (
-    <div style={{ background: bg, padding: '24px 28px', borderRadius: 8, width: '100%', maxWidth: 480, fontFamily: bodyFont }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-        <div>
-          <div style={{ fontFamily: headingFont, fontSize: 18, color: text, fontWeight: 600 }}>INVOICE</div>
-          <div style={{ fontSize: 9, color: text, opacity: .5, marginTop: 4 }}>#INV-2024-0042</div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: headingFont, fontSize: 12, color: hero, fontWeight: 600 }}>{companyName}</div>
-          <div style={{ fontSize: 9, color: text, opacity: .5, lineHeight: 1.6 }}>123 Design Street<br />New York, NY 10001</div>
-        </div>
-      </div>
-      <div style={{ borderTop: `1px solid ${neutral}40`, marginBottom: 12 }} />
-      <div style={{ marginBottom: 12 }}>
-        {items.map(([desc, qty, rate, total], idx) => (
-          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${neutral}20`, fontSize: 10, color: text }}>
-            <span style={{ flex: 2 }}>{desc}</span>
-            <span style={{ flex: .5, textAlign: 'center', opacity: .6 }}>{qty}</span>
-            <span style={{ flex: 1, textAlign: 'right', opacity: .6 }}>{rate}</span>
-            <span style={{ flex: 1, textAlign: 'right', fontWeight: 500 }}>{total}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 20, padding: '10px 0' }}>
-        <span style={{ fontSize: 11, color: text, opacity: .6 }}>Total Due</span>
-        <span style={{ fontFamily: headingFont, fontSize: 20, color: hero, fontWeight: 700 }}>$5,100.00</span>
-      </div>
-      <div style={{ marginTop: 12, padding: '8px 14px', background: `${accent}15`, borderRadius: 'var(--ps-radius-md)', fontSize: 9, color: accent, textAlign: 'center' }}>Payment due within 30 days · Thank you for your business</div>
-    </div>
-  );
-}
-
-function Letterhead({ palette, headingFont, bodyFont, brandInfo = {} }) {
-  const { hero, accent, background: bg, text, neutral } = palette;
-  const { companyName = 'YourBrand', personName = 'Jane Doe', personTitle = 'Creative Director', email = 'hello@yourbrand.com', phone = '+1 (555) 123-4567' } = brandInfo;
-  return (
-    <div style={{ background: bg, padding: '28px 32px', minHeight: 320, display: 'flex', flexDirection: 'column', position: 'relative', borderRadius: 8, width: '100%', maxWidth: 480, fontFamily: bodyFont }}>
-      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 5, background: `linear-gradient(90deg, ${hero}, ${accent})`, borderRadius: '8px 8px 0 0' }} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, paddingTop: 8 }}>
-        <div style={{ fontFamily: headingFont, fontSize: 16, color: text, fontWeight: 600 }}>{companyName}</div>
-        <div style={{ fontSize: 8, color: text, opacity: .5, textAlign: 'right', lineHeight: 1.6 }}>123 Design Street · New York, NY 10001<br />{email} · {phone}</div>
-      </div>
-      <div style={{ fontSize: 10, color: text, opacity: .6, marginBottom: 8 }}>April 1, 2026</div>
-      <div style={{ fontSize: 10, color: text, opacity: .6, marginBottom: 16 }}>Dear Valued Client,</div>
-      <div style={{ fontSize: 10, color: text, opacity: .7, lineHeight: 1.85, marginBottom: 20, flex: 1 }}>Thank you for choosing {companyName}. We are thrilled to partner with you on this exciting project. Our team is committed to delivering exceptional results that exceed your expectations and elevate your brand presence.</div>
-      <div style={{ borderTop: `1px solid ${neutral}30`, paddingTop: 14, marginTop: 'auto' }}>
-        <div style={{ fontFamily: headingFont, fontSize: 11, color: hero, fontWeight: 600, marginBottom: 2 }}>{personName}</div>
-        <div style={{ fontSize: 9, color: text, opacity: .5 }}>{personTitle}</div>
-      </div>
-    </div>
-  );
-}
-
 const MOCKUP_TYPES = [
   { key: 'website',   label: 'Website',       caption: 'Website hero section preview' },
   { key: 'social',    label: 'Social Post',   caption: 'Social media post — 1:1 square format' },
@@ -200,7 +125,7 @@ export default function MockupsTab({ roles, colors, onNavigate, selectedFont }) 
           <div style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-sm)', fontWeight: 600, color: 'var(--ps-text-primary)' }}>Brand Details</div>
           <button onClick={() => { setCompanyName('YourBrand'); setTagline('Build Something Beautiful'); setPersonName('Jane Doe'); setPersonTitle('Creative Director'); setEmail('hello@yourbrand.com'); setPhone('+1 (555) 123-4567'); }} style={{ background: 'none', border: 'none', fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-xs)', color: 'var(--ps-accent)', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>Reset to defaults</button>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
+        <div className="ps-brand-fields" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
           {[
             { label: 'Company', value: companyName, set: setCompanyName },
             { label: 'Tagline', value: tagline, set: setTagline },

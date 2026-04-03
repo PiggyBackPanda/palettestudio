@@ -340,7 +340,7 @@ export default function CompetitorTab({ colors }) {
   return (
     <div className="card">
       {/* side-by-side */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, marginBottom: 28 }}>
+      <div className="ps-side-by-side" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 28, marginBottom: 28 }}>
         <PalettePanel label="Your Brand"  colors={colors}           data={yourData} score={yourScore} />
         <PalettePanel label="Competitor"   colors={competitorColors} data={compData} score={compScore} />
       </div>

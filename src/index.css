@@ -250,3 +250,67 @@ body {
     height: 52px !important;
   }
 }
+
+/* ── Responsive — small screens ───────────────────────────────────────────── */
+@media (max-width: 600px) {
+  /* Stack competitor side-by-side into a column */
+  .ps-side-by-side { flex-direction: column !important; }
+  .ps-side-by-side > .ps-divider { width: 100% !important; height: 1px !important; }
+
+  /* Shrink mockup preview padding */
+  .card { padding: var(--ps-space-3) !important; }
+
+  /* Stack brand detail fields into single column */
+  .ps-brand-fields { grid-template-columns: 1fr !important; }
+
+  /* Contrast matrix: enable horizontal scroll */
+  .ps-contrast-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Swatch strip: smaller on mobile */
+  .sw { width: 80px; height: 80px; }
+  .hx { font-size: 10px; }
+}
+
+/* ── Print styles for Brand Guide ─────────────────────────────────────────── */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 18mm 15mm;
+  }
+
+  /* Hide everything except the Brand Guide */
+  body > *:not(main),
+  header, footer, nav,
+  .ps-tab-bar, .ps-tab-fade,
+  .card:not(#ps-brand-guide-printable),
+  button { display: none !important; }
+
+  #ps-brand-guide-printable {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #ps-brand-guide-printable * {
+    visibility: visible !important;
+    break-inside: avoid;
+  }
+
+  /* Section titles force page breaks before them (except the first) */
+  #ps-brand-guide-printable .ps-guide-section:not(:first-of-type) {
+    page-break-before: auto;
+    margin-top: 24px;
+  }
+
+  /* Keep colour grid cards together */
+  #ps-brand-guide-printable .ps-guide-colour-card {
+    break-inside: avoid;
+  }
+}

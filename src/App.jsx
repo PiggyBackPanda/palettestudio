@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePalette } from './hooks/usePalette';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { encodePalette, decodePalette } from './utils/paletteURL';
@@ -57,6 +57,12 @@ export default function App() {
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [showShortcuts]);
+
+  // Focus the active tab button when tab changes (for keyboard navigation)
+  useEffect(() => {
+    const el = document.getElementById(`tab-${tab}`);
+    if (el && document.activeElement?.role === 'tab') el.focus();
+  }, [tab]);
 
   const handleShare = async () => {
     const url = encodePalette(colors, roles);
@@ -150,12 +156,20 @@ export default function App() {
         <SaveSlots savedSlots={savedSlots} currentColors={colors} storageUnavailable={storageUnavailable} onSave={saveSlot} onLoad={loadSlot} onDelete={deleteSlot} onRename={renameSlot} />
 
         <div style={{ position: 'relative', marginBottom: 18 }}>
-          <div className="ps-tab-bar" style={{ borderBottom: '1px solid var(--ps-border)', display: 'flex', overflowX: 'auto', gap: 0, background: 'var(--ps-bg-surface)', borderRadius: 'var(--ps-radius-lg) var(--ps-radius-lg) 0 0', padding: '0 4px', scrollbarWidth: 'none' }}>
-            {TABS.map(t => (
-              <button key={t.key} className={`tb${tab === t.key ? ' on' : ''}`} onClick={() => setTab(t.key)}>
+          <div className="ps-tab-bar" role="tablist" aria-label="Palette Studio sections" style={{ borderBottom: '1px solid var(--ps-border)', display: 'flex', overflowX: 'auto', gap: 0, background: 'var(--ps-bg-surface)', borderRadius: 'var(--ps-radius-lg) var(--ps-radius-lg) 0 0', padding: '0 4px', scrollbarWidth: 'none' }}>
+            {TABS.map((t, i) => (
+              <button key={t.key} role="tab" aria-selected={tab === t.key} aria-controls={`tabpanel-${t.key}`} id={`tab-${t.key}`} tabIndex={tab === t.key ? 0 : -1} className={`tb${tab === t.key ? ' on' : ''}`} onClick={() => setTab(t.key)}
+                onKeyDown={e => {
+                  const len = TABS.length;
+                  if (e.key === 'ArrowRight') { e.preventDefault(); const next = TABS[(i + 1) % len].key; setTab(next); }
+                  if (e.key === 'ArrowLeft')  { e.preventDefault(); const prev = TABS[(i - 1 + len) % len].key; setTab(prev); }
+                  if (e.key === 'Home')       { e.preventDefault(); setTab(TABS[0].key); }
+                  if (e.key === 'End')        { e.preventDefault(); setTab(TABS[len - 1].key); }
+                }}
+              >
                 {t.label}
-                {t.key === 'issues' && warnCount > 0 && (
-                  <span style={{ marginLeft: 5, background: 'var(--ps-accent)', color: 'var(--ps-accent-text)', borderRadius: 'var(--ps-radius-full)', width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, verticalAlign: 'middle' }}>{warnCount}</span>
+                {t.key === 'diagnose' && warnCount > 0 && (
+                  <span aria-label={`${warnCount} issues`} style={{ marginLeft: 5, background: 'var(--ps-accent)', color: 'var(--ps-accent-text)', borderRadius: 'var(--ps-radius-full)', width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, verticalAlign: 'middle' }}>{warnCount}</span>
                 )}
               </button>
             ))}
