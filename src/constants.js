@@ -1,15 +1,15 @@
 export const DEFAULTS = ['#2D4A6B', '#E8734A', '#F5E6C8', '#1A1A2E'];
 
 export const TABS = [
-  { key: 'diagnose',   label: 'Diagnose' },
   { key: 'colours',    label: 'Colours' },
   { key: 'roles',      label: 'Roles' },
+  { key: 'diagnose',   label: 'Diagnose' },
   { key: 'typography', label: 'Typography' },
   { key: 'variations', label: 'Variations' },
+  { key: 'compare',    label: 'Compare' },
   { key: 'mockups',    label: 'Templates' },
   { key: 'export',     label: 'Export' },
   { key: 'guide',      label: 'Brand Guide' },
-  { key: 'compare',    label: 'Compare' },
 ];
 
 export const FONT_PAIRS = [

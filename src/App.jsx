@@ -22,7 +22,7 @@ import BrandGuideTab   from './tabs/BrandGuideTab';
 import CompetitorTab   from './tabs/CompetitorTab';
 
 export default function App() {
-  const [tab,            setTab]            = useState('diagnose');
+  const [tab,            setTab]            = useState('colours');
   const [picker,         setPicker]         = useState('#888888');
   const [cvdType,        setCvdType]        = useState('protanopia');
   const [shareCopied,    setShareCopied]    = useState(false);
