@@ -2949,24 +2949,516 @@ export default function PaletteFixer() {
         })()}
 
         {/* Competitor Analysis tab */}
-        {tab === "competitor" && (
-          <div>
-            <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
-              <strong style={{ color:"#555" }}>Competitor Analysis</strong>
-              {" "}— Coming soon.
+        {tab === "competitor" && (() => {
+          const compFileRef = useRef();
+          const [compDragging, setCompDragging] = useState(false);
+          const [compExtracting, setCompExtracting] = useState(false);
+
+          const processCompFile = async (file) => {
+            if (!file || !file.type.startsWith("image/")) return;
+            setCompExtracting(true);
+            setCompetitorImage(URL.createObjectURL(file));
+            try {
+              const cols = await extractColorsFromImage(file, 10);
+              setCompetitorColors(cols.slice(0, 6));
+            } catch(e) {
+              setCompetitorColors([]);
+            } finally {
+              setCompExtracting(false);
+            }
+          };
+
+          const handleCompDrop = (e) => {
+            e.preventDefault(); setCompDragging(false);
+            const f = e.dataTransfer.files?.[0];
+            if (f) processCompFile(f);
+          };
+
+          const analyzeColors = (cols) => {
+            const d = cols.map(hex => { const {r,g,b} = hexToRgb(hex); return { hex, ...rgbToHsl(r,g,b), lum: luminance(r,g,b) }; });
+            const avgSat = d.length ? d.reduce((a,c) => a+c.s, 0) / d.length : 0;
+            const avgLight = d.length ? d.reduce((a,c) => a+c.l, 0) / d.length : 0;
+            const hues = d.map(c => c.h);
+            const warm = d.filter(c => { const t = tempCategory(c.h, c.s); return t.label === "warm" || t.label === "warm-green"; }).length;
+            const cool = d.filter(c => { const t = tempCategory(c.h, c.s); return t.label === "cool" || t.label === "cool-purple"; }).length;
+            const neutral = d.filter(c => { const t = tempCategory(c.h, c.s); return t.label === "neutral" || t.label === "natural"; }).length;
+            const total = d.length || 1;
+            const issues = d.length >= 2 ? diagnose(cols) : [];
+            const score = healthScore(issues);
+            return { d, avgSat, avgLight, hues, warm: Math.round(warm/total*100), cool: Math.round(cool/total*100), neutral: Math.round(neutral/total*100), score };
+          };
+
+          const yours = analyzeColors(colors);
+          const theirs = competitorColors.length ? analyzeColors(competitorColors) : null;
+
+          // Generate insights
+          const insights = [];
+          if (theirs) {
+            if (yours.avgSat - theirs.avgSat > 15) insights.push("Your palette is significantly more saturated, giving it more energy and visual punch.");
+            else if (theirs.avgSat - yours.avgSat > 15) insights.push("The competitor uses more saturated colours — consider boosting vibrancy to compete for attention.");
+            else insights.push("Both palettes have similar saturation levels, competing on equal visual energy.");
+
+            if (yours.avgLight - theirs.avgLight > 15) insights.push("Your palette runs lighter, projecting an airy, open feel vs their darker, heavier tone.");
+            else if (theirs.avgLight - yours.avgLight > 15) insights.push("The competitor uses a lighter palette — yours feels more grounded and authoritative.");
+
+            if (Math.abs(yours.warm - theirs.warm) > 25) insights.push(yours.warm > theirs.warm ? "Your palette skews warmer, feeling more inviting and energetic." : "The competitor leans warmer — your cooler tones convey calm professionalism.");
+
+            if (Math.abs(yours.score - theirs.score) > 15) insights.push(yours.score > theirs.score ? `Your health score (${yours.score}) beats theirs (${theirs.score}) — better technical quality.` : `Their health score (${theirs.score}) edges yours (${yours.score}) — review the Issues tab for fixes.`);
+
+            // Hue spread
+            const hueSpread = (hues) => { if (hues.length < 2) return 0; const sorted = [...hues].sort((a,b)=>a-b); let maxGap = 0; for (let i=1;i<sorted.length;i++) maxGap = Math.max(maxGap, sorted[i]-sorted[i-1]); maxGap = Math.max(maxGap, 360 - sorted[sorted.length-1] + sorted[0]); return 360 - maxGap; };
+            const yourSpread = hueSpread(yours.hues);
+            const theirSpread = hueSpread(theirs.hues);
+            if (yourSpread - theirSpread > 60) insights.push("Your hue range is broader — more versatile but risks feeling scattered. Consider tightening.");
+            else if (theirSpread - yourSpread > 60) insights.push("The competitor uses a wider hue range. Your tighter palette feels more cohesive and focused.");
+
+            if (insights.length < 3) insights.push("Both palettes occupy a similar colour space — differentiation will come from usage and proportion.");
+          }
+
+          // SVG hue wheel renderer
+          const HueWheel = ({ analysisData, size = 100 }) => {
+            const cx = size/2, cy = size/2, r = size/2 - 8;
+            return (
+              <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e4ddd4" strokeWidth={1}/>
+                {analysisData.d.map((c, i) => {
+                  const angle = (c.h - 90) * Math.PI / 180;
+                  const dotR = 4 + (c.s / 100) * 4;
+                  const dist = r * 0.85;
+                  return <circle key={i} cx={cx + Math.cos(angle)*dist} cy={cy + Math.sin(angle)*dist} r={dotR} fill={c.hex} stroke="#fff" strokeWidth={1.5}/>;
+                })}
+              </svg>
+            );
+          };
+
+          // SVG scatter plot (S vs L)
+          const ScatterPlot = ({ analysisData, size = 120 }) => (
+            <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+              <rect x={0} y={0} width={size} height={size} fill="#faf8f5" rx={4}/>
+              <line x1={10} y1={size-10} x2={size-10} y2={size-10} stroke="#e4ddd4" strokeWidth={1}/>
+              <line x1={10} y1={10} x2={10} y2={size-10} stroke="#e4ddd4" strokeWidth={1}/>
+              <text x={size/2} y={size-1} textAnchor="middle" fontSize={7} fill="#aaa">Saturation</text>
+              <text x={2} y={size/2} textAnchor="middle" fontSize={7} fill="#aaa" transform={`rotate(-90,2,${size/2})`}>Lightness</text>
+              {analysisData.d.map((c, i) => {
+                const x = 10 + (c.s / 100) * (size - 20);
+                const y = size - 10 - (c.l / 100) * (size - 20);
+                return <circle key={i} cx={x} cy={y} r={5} fill={c.hex} stroke="#fff" strokeWidth={1.5}/>;
+              })}
+            </svg>
+          );
+
+          const TempBar = ({ warm, cool, neutral }) => (
+            <div style={{ display:"flex", height:12, borderRadius:6, overflow:"hidden", width:"100%" }}>
+              {warm > 0 && <div style={{ flex: warm, background:"#c05020" }}/>}
+              {neutral > 0 && <div style={{ flex: neutral, background:"#888" }}/>}
+              {cool > 0 && <div style={{ flex: cool, background:"#205080" }}/>}
             </div>
-          </div>
-        )}
+          );
+
+          const PaletteColumn = ({ label, cols, analysis }) => (
+            <div style={{ flex:1, minWidth:240 }}>
+              <div style={{ fontFamily:"'Playfair Display', serif", fontSize:14, fontWeight:600, color:"#444", marginBottom:12 }}>{label}</div>
+
+              {/* Swatches */}
+              <div style={{ display:"flex", gap:0, borderRadius:6, overflow:"hidden", marginBottom:14 }}>
+                {cols.map((hex, i) => <div key={i} style={{ flex:1, height:36, background:hex }}/>)}
+              </div>
+
+              {/* Hue wheel */}
+              <div style={{ textAlign:"center", marginBottom:10 }}>
+                <div style={{ fontSize:9, color:"#aaa", marginBottom:4 }}>Hue Distribution</div>
+                <HueWheel analysisData={analysis} />
+              </div>
+
+              {/* Scatter */}
+              <div style={{ textAlign:"center", marginBottom:10 }}>
+                <div style={{ fontSize:9, color:"#aaa", marginBottom:4 }}>Saturation / Lightness</div>
+                <ScatterPlot analysisData={analysis} />
+              </div>
+
+              {/* Temperature */}
+              <div style={{ marginBottom:10 }}>
+                <div style={{ fontSize:9, color:"#aaa", marginBottom:4 }}>Temperature</div>
+                <TempBar warm={analysis.warm} cool={analysis.cool} neutral={analysis.neutral} />
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:8, color:"#aaa", marginTop:2 }}>
+                  <span>Warm {analysis.warm}%</span><span>Neutral {analysis.neutral}%</span><span>Cool {analysis.cool}%</span>
+                </div>
+              </div>
+
+              {/* Health */}
+              <div style={{ fontSize:10, color:"#555" }}>
+                Health Score: <strong style={{ color: analysis.score >= 70 ? "#2a6a2a" : analysis.score >= 40 ? "#8a5000" : "#c04040" }}>{analysis.score}/100</strong>
+              </div>
+            </div>
+          );
+
+          return (
+            <div>
+              <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+                <strong style={{ color:"#555" }}>Competitor Analysis</strong>
+                {" "}— Upload a competitor's logo or screenshot to extract their palette
+                and compare it side-by-side with yours across hue, saturation, lightness,
+                temperature, and overall health.
+              </div>
+
+              {/* Upload zone */}
+              {!competitorImage && (
+                <div className="card" style={{ marginBottom:14, padding:0 }}>
+                  <div
+                    onDragOver={e => { e.preventDefault(); setCompDragging(true); }}
+                    onDragLeave={() => setCompDragging(false)}
+                    onDrop={handleCompDrop}
+                    onClick={() => compFileRef.current?.click()}
+                    style={{
+                      border: `2px dashed ${compDragging ? "#b8703a" : "#e0d8cc"}`,
+                      borderRadius:6, padding:"24px", textAlign:"center",
+                      cursor:"pointer", background: compDragging ? "#fff8f0" : "#faf8f5",
+                      transition:"all .18s"
+                    }}
+                  >
+                    <div style={{ fontSize:22, marginBottom:6, opacity:.4 }}>^</div>
+                    <div style={{ fontSize:11, color: compDragging ? "#b8703a" : "#aaa", marginBottom:3 }}>
+                      {compDragging ? "Drop it here!" : "Upload a competitor's logo or screenshot"}
+                    </div>
+                    <div style={{ fontSize:9, color:"#ccc" }}>Drag & drop or click to browse — PNG, JPG, WebP, SVG, GIF</div>
+                    <input ref={compFileRef} type="file" accept="image/*" style={{ display:"none" }}
+                      onChange={e => { const f = e.target.files?.[0]; if (f) processCompFile(f); e.target.value=""; }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {compExtracting && (
+                <div style={{ textAlign:"center", padding:"24px 0" }}>
+                  <div style={{ fontSize:10, color:"#b8703a", letterSpacing:".15em", textTransform:"uppercase" }}>Scanning colours...</div>
+                </div>
+              )}
+
+              {competitorImage && competitorColors.length > 0 && (
+                <div>
+                  {/* Reset */}
+                  <div style={{ marginBottom:14, textAlign:"right" }}>
+                    <button onClick={() => { setCompetitorColors([]); setCompetitorImage(null); }} style={{
+                      fontSize:9, color:"#b8703a", background:"none", border:"none", cursor:"pointer", textDecoration:"underline"
+                    }}>Upload a different image</button>
+                  </div>
+
+                  {/* Side by side */}
+                  <div className="card" style={{ marginBottom:14, display:"flex", gap:24, flexWrap:"wrap" }}>
+                    <PaletteColumn label="Your Brand" cols={colors} analysis={yours} />
+                    <div style={{ width:1, background:"#e4ddd4", alignSelf:"stretch" }}/>
+                    <PaletteColumn label="Competitor" cols={competitorColors} analysis={theirs} />
+                  </div>
+
+                  {/* Insights */}
+                  <div className="card" style={{ marginBottom:14 }}>
+                    <div style={{ fontFamily:"'Playfair Display', serif", fontSize:14, fontWeight:600, color:"#444", marginBottom:10 }}>Insights</div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                      {insights.map((text, i) => (
+                        <div key={i} style={{
+                          fontSize:11, lineHeight:1.6, padding:"8px 12px",
+                          background:"#faf8f5", border:"1px solid #e4ddd4", borderRadius:6, color:"#555"
+                        }}>
+                          {text}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Edit Mockups tab */}
-        {tab === "editor" && (
-          <div>
-            <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
-              <strong style={{ color:"#555" }}>Edit Mockups</strong>
-              {" "}— Coming soon.
+        {tab === "editor" && (() => {
+          const activePair = selectedFont || FONT_PAIRS[0];
+          const headingFont = activePair.heading;
+          const bodyFont = activePair.body;
+          const data = colors.map(hex => { const {r,g,b} = hexToRgb(hex); return { hex, ...rgbToHsl(r,g,b), lum: luminance(r,g,b) }; });
+
+          const bgCol = Object.keys(roles).find(k => roles[k] === "Background")
+            || (data.length ? data.reduce((b,c) => c.l > b.l ? c : b, data[0]).hex : "#f5f0e8");
+          const heroCol = Object.keys(roles).find(k => roles[k] === "Hero")
+            || (data.length ? data.reduce((b,c) => c.s > b.s ? c : b, data[0]).hex : "#b8703a");
+          const accentCol = Object.keys(roles).find(k => roles[k] === "Accent")
+            || (data.length && data.length > 1 ? data.filter(c => c.hex !== heroCol).reduce((b,c) => c.s > b.s ? c : b, data[0]).hex : "#2a7a7a");
+          const txtCol = Object.keys(roles).find(k => roles[k] === "Text")
+            || (data.length ? data.reduce((b,c) => c.l < b.l ? c : b, data[0]).hex : "#1a1a2e");
+          const neutralCol = Object.keys(roles).find(k => roles[k] === "Neutral")
+            || (data.length ? data.reduce((b,c) => { const sc = Math.abs(c.l-50)+(100-c.s); const sb = Math.abs(b.l-50)+(100-b.s); return sc<sb?c:b; }, data[0]).hex : "#888888");
+
+          const resetDefaults = () => {
+            setCompanyName("YourBrand"); setTagline("Build Something Beautiful");
+            setPersonName("Jane Doe"); setPersonTitle("Creative Director");
+            setEmail("hello@yourbrand.com"); setPhone("+1 (555) 123-4567");
+          };
+
+          const templateCardStyle = {
+            background:"#fff", border:"1px solid #e4ddd4",
+            borderRadius:8, overflow:"hidden", marginBottom:14
+          };
+          const descStyle = {
+            padding:"14px 18px", fontSize:10, color:"#888",
+            lineHeight:1.7, borderTop:"1px solid #f0ece8"
+          };
+          const inputStyle = {
+            fontFamily:"'DM Mono', monospace", fontSize:11, padding:"6px 10px",
+            border:"1px solid #e4ddd4", borderRadius:4, background:"#faf8f5",
+            color:"#444", width:"100%", outline:"none"
+          };
+
+          return (
+            <div>
+              <div className="card" style={{ marginBottom:14, fontSize:11, color:"#888", lineHeight:1.75 }}>
+                <strong style={{ color:"#555" }}>Edit Mockups</strong>
+                {" "}— Customise the text in every template mockup. Type your real brand details
+                and watch all templates update live.
+              </div>
+
+              {/* Editable fields card */}
+              <div className="card" style={{ marginBottom:14 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                  <div style={{ fontFamily:"'Playfair Display', serif", fontSize:13, fontWeight:600, color:"#444" }}>Brand Details</div>
+                  <button onClick={resetDefaults} style={{
+                    fontSize:9, color:"#b8703a", background:"none", border:"none", cursor:"pointer", textDecoration:"underline"
+                  }}>Reset to defaults</button>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(200px, 1fr))", gap:10 }}>
+                  {[
+                    { label: "Company Name", value: companyName, set: setCompanyName },
+                    { label: "Tagline", value: tagline, set: setTagline },
+                    { label: "Person Name", value: personName, set: setPersonName },
+                    { label: "Title / Role", value: personTitle, set: setPersonTitle },
+                    { label: "Email", value: email, set: setEmail },
+                    { label: "Phone", value: phone, set: setPhone },
+                  ].map(f => (
+                    <div key={f.label}>
+                      <div style={{ fontSize:9, color:"#aaa", marginBottom:3, textTransform:"uppercase", letterSpacing:".08em" }}>{f.label}</div>
+                      <input style={inputStyle} value={f.value} onChange={e => f.set(e.target.value)} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Templates grid */}
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(380px, 1fr))", gap:14 }}>
+
+                {/* Business Card */}
+                <div style={templateCardStyle}>
+                  <div style={{
+                    padding:"28px 32px", background:bgCol,
+                    display:"flex", flexDirection:"column", justifyContent:"space-between",
+                    minHeight:200, position:"relative"
+                  }}>
+                    <div style={{ width:36, height:4, background:heroCol, borderRadius:2, marginBottom:16 }}/>
+                    <div>
+                      <div style={{ fontFamily:headingFont, fontSize:20, color:txtCol, marginBottom:4, fontWeight:600 }}>{personName}</div>
+                      <div style={{ fontFamily:bodyFont, fontSize:11, color:txtCol, opacity:.7, marginBottom:14 }}>{personTitle}</div>
+                    </div>
+                    <div style={{ borderTop:`1px solid ${neutralCol}40`, paddingTop:12 }}>
+                      <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.6, lineHeight:1.8 }}>
+                        {email}<br/>{phone}<br/>www.{companyName.toLowerCase().replace(/\s+/g, "")}.com
+                      </div>
+                    </div>
+                    <div style={{ position:"absolute", top:0, right:0, width:48, height:"100%", background:heroCol }}/>
+                  </div>
+                  <div style={descStyle}><strong>Business Card</strong></div>
+                </div>
+
+                {/* Social Post */}
+                <div style={templateCardStyle}>
+                  <div style={{
+                    width:"100%", aspectRatio:"1/1", background:heroCol,
+                    display:"flex", flexDirection:"column", alignItems:"center",
+                    justifyContent:"center", padding:"32px 28px", position:"relative", maxHeight:380
+                  }}>
+                    <div style={{
+                      fontFamily:headingFont, fontSize:28, color:textOn(heroCol),
+                      textAlign:"center", fontWeight:700, marginBottom:12, lineHeight:1.3
+                    }}>{tagline}</div>
+                    <div style={{
+                      fontFamily:bodyFont, fontSize:12, color:textOn(heroCol),
+                      textAlign:"center", opacity:.85, marginBottom:20, lineHeight:1.6, maxWidth:260
+                    }}>Something exciting is coming. Stay tuned for updates and be the first to know.</div>
+                    <div style={{
+                      background:accentCol, color:textOn(accentCol),
+                      fontFamily:bodyFont, fontSize:10, letterSpacing:".1em",
+                      textTransform:"uppercase", padding:"10px 24px", borderRadius:4,
+                      boxShadow:"0 2px 8px rgba(0,0,0,.15)"
+                    }}>Learn More</div>
+                    <div style={{
+                      position:"absolute", bottom:16, fontFamily:bodyFont,
+                      fontSize:9, color:textOn(heroCol), opacity:.5
+                    }}>@{companyName.toLowerCase().replace(/\s+/g, "")}</div>
+                  </div>
+                  <div style={descStyle}><strong>Social Post</strong></div>
+                </div>
+
+                {/* Website Hero */}
+                <div style={templateCardStyle}>
+                  <div style={{ background:bgCol, minHeight:280 }}>
+                    <div style={{
+                      display:"flex", justifyContent:"space-between", alignItems:"center",
+                      padding:"12px 24px", borderBottom:`1px solid ${neutralCol}30`
+                    }}>
+                      <div style={{ fontFamily:headingFont, fontSize:14, color:txtCol, fontWeight:600 }}>{companyName}</div>
+                      <div style={{ display:"flex", gap:16 }}>
+                        {["About","Services","Contact"].map(item => (
+                          <span key={item} style={{ fontFamily:bodyFont, fontSize:10, color:txtCol, opacity:.6, cursor:"default" }}>{item}</span>
+                        ))}
+                        <span style={{
+                          fontFamily:bodyFont, fontSize:9, color:textOn(accentCol),
+                          background:accentCol, padding:"4px 12px", borderRadius:3,
+                          letterSpacing:".08em", textTransform:"uppercase"
+                        }}>Get Started</span>
+                      </div>
+                    </div>
+                    <div style={{ padding:"40px 24px 32px", textAlign:"center" }}>
+                      <div style={{
+                        fontFamily:headingFont, fontSize:28, color:txtCol,
+                        fontWeight:700, marginBottom:10, lineHeight:1.3
+                      }}>{tagline}</div>
+                      <div style={{
+                        fontFamily:bodyFont, fontSize:12, color:txtCol,
+                        opacity:.65, lineHeight:1.7, maxWidth:400, margin:"0 auto 20px"
+                      }}>We help brands stand out with thoughtful design and strategic thinking. Let us bring your vision to life.</div>
+                      <div style={{ display:"flex", gap:10, justifyContent:"center" }}>
+                        <div style={{
+                          background:heroCol, color:textOn(heroCol),
+                          fontFamily:bodyFont, fontSize:10, letterSpacing:".1em",
+                          textTransform:"uppercase", padding:"10px 22px", borderRadius:4,
+                          boxShadow:"0 2px 8px rgba(0,0,0,.12)"
+                        }}>Get Started</div>
+                        <div style={{
+                          background:"transparent", color:txtCol,
+                          fontFamily:bodyFont, fontSize:10, letterSpacing:".1em",
+                          textTransform:"uppercase", padding:"10px 22px", borderRadius:4,
+                          border:`1px solid ${neutralCol}`
+                        }}>Learn More</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={descStyle}><strong>Website Hero</strong></div>
+                </div>
+
+                {/* Email Signature */}
+                <div style={templateCardStyle}>
+                  <div style={{ padding:"24px 28px", background:bgCol }}>
+                    <div style={{ display:"flex", gap:16, alignItems:"flex-start" }}>
+                      <div style={{
+                        width:56, height:56, borderRadius:"50%", background:heroCol,
+                        flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center",
+                        boxShadow:"0 2px 8px rgba(0,0,0,.1)"
+                      }}>
+                        <span style={{ fontFamily:headingFont, fontSize:22, color:textOn(heroCol), fontWeight:600 }}>{personName.charAt(0)}</span>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily:headingFont, fontSize:16, color:txtCol, fontWeight:600, marginBottom:2 }}>{personName}</div>
+                        <div style={{ fontFamily:bodyFont, fontSize:10, color:accentCol, marginBottom:8 }}>{personTitle} at {companyName}</div>
+                        <div style={{ width:32, height:2, background:heroCol, borderRadius:1, marginBottom:8 }}/>
+                        <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.6, lineHeight:1.8 }}>
+                          {phone} · {email}
+                        </div>
+                        <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5, marginTop:2 }}>
+                          www.{companyName.toLowerCase().replace(/\s+/g, "")}.com
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={descStyle}><strong>Email Signature</strong></div>
+                </div>
+
+                {/* Invoice */}
+                <div style={templateCardStyle}>
+                  <div style={{ background:bgCol, padding:"24px 28px" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+                      <div>
+                        <div style={{ fontFamily:headingFont, fontSize:18, color:txtCol, fontWeight:600 }}>INVOICE</div>
+                        <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5, marginTop:4 }}>#INV-2024-0042</div>
+                      </div>
+                      <div style={{ textAlign:"right" }}>
+                        <div style={{ fontFamily:headingFont, fontSize:12, color:heroCol, fontWeight:600 }}>{companyName}</div>
+                        <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5, lineHeight:1.6 }}>123 Design Street<br/>New York, NY 10001</div>
+                      </div>
+                    </div>
+                    <div style={{ borderTop:`1px solid ${neutralCol}40`, marginBottom:12 }}/>
+                    <div style={{ marginBottom:12 }}>
+                      {[
+                        ["Brand Strategy Workshop", "2", "$950.00", "$1,900.00"],
+                        ["Logo Design Package", "1", "$2,400.00", "$2,400.00"],
+                        ["Brand Guidelines Document", "1", "$800.00", "$800.00"],
+                      ].map(([desc, qty, rate, total], idx) => (
+                        <div key={idx} style={{
+                          display:"flex", justifyContent:"space-between", alignItems:"center",
+                          padding:"8px 0", borderBottom:`1px solid ${neutralCol}20`,
+                          fontFamily:bodyFont, fontSize:10, color:txtCol
+                        }}>
+                          <span style={{ flex:2 }}>{desc}</span>
+                          <span style={{ flex:.5, textAlign:"center", opacity:.6 }}>{qty}</span>
+                          <span style={{ flex:1, textAlign:"right", opacity:.6 }}>{rate}</span>
+                          <span style={{ flex:1, textAlign:"right", fontWeight:500 }}>{total}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display:"flex", justifyContent:"flex-end", alignItems:"center", gap:20, padding:"10px 0" }}>
+                      <span style={{ fontFamily:bodyFont, fontSize:11, color:txtCol, opacity:.6 }}>Total Due</span>
+                      <span style={{ fontFamily:headingFont, fontSize:20, color:heroCol, fontWeight:700 }}>$5,100.00</span>
+                    </div>
+                    <div style={{
+                      marginTop:12, padding:"8px 14px", background:`${accentCol}15`,
+                      borderRadius:4, fontFamily:bodyFont, fontSize:9,
+                      color:accentCol, textAlign:"center"
+                    }}>Payment due within 30 days · Thank you for your business</div>
+                  </div>
+                  <div style={descStyle}><strong>Invoice</strong></div>
+                </div>
+
+                {/* Letterhead */}
+                <div style={templateCardStyle}>
+                  <div style={{
+                    background:bgCol, padding:"28px 32px", minHeight:320,
+                    display:"flex", flexDirection:"column", position:"relative"
+                  }}>
+                    <div style={{
+                      position:"absolute", top:0, left:0, width:"100%", height:5,
+                      background:`linear-gradient(90deg, ${heroCol}, ${accentCol})`
+                    }}/>
+                    <div style={{
+                      display:"flex", justifyContent:"space-between", alignItems:"center",
+                      marginBottom:28, paddingTop:8
+                    }}>
+                      <div style={{ fontFamily:headingFont, fontSize:16, color:txtCol, fontWeight:600 }}>{companyName}</div>
+                      <div style={{ fontFamily:bodyFont, fontSize:8, color:txtCol, opacity:.5, textAlign:"right", lineHeight:1.6 }}>
+                        123 Design Street · New York, NY 10001<br/>{email} · {phone}
+                      </div>
+                    </div>
+                    <div style={{ fontFamily:bodyFont, fontSize:10, color:txtCol, opacity:.6, marginBottom:8 }}>
+                      April 1, 2026
+                    </div>
+                    <div style={{ fontFamily:bodyFont, fontSize:10, color:txtCol, opacity:.6, marginBottom:16 }}>
+                      Dear Valued Client,
+                    </div>
+                    <div style={{
+                      fontFamily:bodyFont, fontSize:10, color:txtCol, opacity:.7,
+                      lineHeight:1.85, marginBottom:20, flex:1
+                    }}>
+                      Thank you for choosing {companyName}. We are thrilled to partner with you on this
+                      exciting project. Our team is committed to delivering exceptional results that
+                      exceed your expectations and elevate your brand presence.
+                    </div>
+                    <div style={{ borderTop:`1px solid ${neutralCol}30`, paddingTop:14, marginTop:"auto" }}>
+                      <div style={{ fontFamily:headingFont, fontSize:11, color:heroCol, fontWeight:600, marginBottom:2 }}>{personName}</div>
+                      <div style={{ fontFamily:bodyFont, fontSize:9, color:txtCol, opacity:.5 }}>{personTitle}</div>
+                    </div>
+                  </div>
+                  <div style={descStyle}><strong>Letterhead</strong></div>
+                </div>
+
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {tab === "templates" && (() => {
           const activePair = selectedFont || FONT_PAIRS[0];
