@@ -246,7 +246,9 @@ function PalettePanel({ label, colors, data, score }) {
 
 /* ── main component ──────────────────────────────────────────────────────────── */
 
-export default function CompetitorTab({ colors }) {
+export default function CompetitorTab({ colors, savedSlots = [] }) {
+  const [section, setSection]                   = useState('competitor');
+  const [compareSlotId, setCompareSlotId]       = useState(null);
   const [competitorColors, setCompetitorColors] = useState([]);
   const [competitorImage, setCompetitorImage]   = useState(null);
   const [dragging, setDragging]                 = useState(false);
@@ -285,10 +287,103 @@ export default function CompetitorTab({ colors }) {
     setCompetitorImage(null);
   };
 
+  // ── Saved palette comparison ──────────────────────────────────────────────
+  const compareSlot = savedSlots.find(s => s.id === compareSlotId);
+  const compareColors = compareSlot ? compareSlot.colors : null;
+
+  const SECTIONS = [
+    { key: 'competitor', label: 'vs Competitor' },
+    { key: 'saved', label: 'vs Saved Palette' },
+  ];
+
+  const pillNav = (
+    <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+      {SECTIONS.map(s => (
+        <button key={s.key} onClick={() => setSection(s.key)} style={{
+          fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-sm)',
+          fontWeight: section === s.key ? 600 : 400, padding: '6px 14px',
+          borderRadius: 'var(--ps-radius-full)',
+          border: '1px solid ' + (section === s.key ? 'var(--ps-accent)' : 'var(--ps-border)'),
+          background: section === s.key ? 'var(--ps-accent-subtle)' : 'var(--ps-bg-surface)',
+          color: section === s.key ? 'var(--ps-accent)' : 'var(--ps-text-secondary)',
+          cursor: 'pointer', transition: 'all .15s',
+        }}>{s.label}</button>
+      ))}
+    </div>
+  );
+
+  // ── Saved palette section ───────────────────────────────────────────────
+  if (section === 'saved') {
+    return (
+      <div>
+        {pillNav}
+        {savedSlots.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: '40px 24px' }}>
+            <div style={{ fontSize: 32, marginBottom: 14 }}>📁</div>
+            <div style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-lg)', fontWeight: 700, color: 'var(--ps-text-primary)', marginBottom: 10 }}>No saved palettes yet</div>
+            <p style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-sm)', color: 'var(--ps-text-secondary)', lineHeight: 1.6 }}>Save a palette first, then come back here to compare it with your current palette.</p>
+          </div>
+        ) : (
+          <div>
+            <div className="card" style={{ marginBottom: 12 }}>
+              <div style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-sm)', fontWeight: 600, color: 'var(--ps-text-primary)', marginBottom: 10 }}>Choose a saved palette to compare</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {savedSlots.map(slot => (
+                  <button key={slot.id} onClick={() => setCompareSlotId(slot.id)} style={{
+                    padding: '8px 14px', borderRadius: 'var(--ps-radius-md)',
+                    border: compareSlotId === slot.id ? '2px solid var(--ps-accent)' : '1px solid var(--ps-border)',
+                    background: compareSlotId === slot.id ? 'var(--ps-accent-subtle)' : 'var(--ps-bg-surface)',
+                    cursor: 'pointer', fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-sm)',
+                    color: 'var(--ps-text-primary)', display: 'flex', alignItems: 'center', gap: 8,
+                  }}>
+                    <div style={{ display: 'flex', gap: 2 }}>
+                      {slot.colors.slice(0, 5).map((hex, i) => (
+                        <div key={i} style={{ width: 14, height: 14, borderRadius: 3, background: hex, border: '1px solid rgba(0,0,0,.08)' }} />
+                      ))}
+                    </div>
+                    <span>{slot.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {compareColors && (
+              <div className="card">
+                <div className="ps-side-by-side" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 28, marginBottom: 28 }}>
+                  <PalettePanel label="Current Palette" colors={colors} data={hslData(colors)} score={healthScore(colors)} />
+                  <PalettePanel label={compareSlot.name} colors={compareColors} data={hslData(compareColors)} score={healthScore(compareColors)} />
+                </div>
+                <div>
+                  <div style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-md)', fontWeight: 600, color: 'var(--ps-text-primary)', marginBottom: 10 }}>Comparison</div>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-sm)', color: 'var(--ps-text-secondary)', lineHeight: 1.75 }}>
+                    {(() => {
+                      const yourScore = healthScore(colors);
+                      const theirScore = healthScore(compareColors);
+                      const lines = [];
+                      if (Math.abs(yourScore - theirScore) > 10) lines.push(yourScore > theirScore ? `Your current palette scores higher (${yourScore} vs ${theirScore}).` : `"${compareSlot.name}" scores higher (${theirScore} vs ${yourScore}).`);
+                      else lines.push(`Both palettes have similar health scores (${yourScore} vs ${theirScore}).`);
+                      const yourD = hslData(colors), theirD = hslData(compareColors);
+                      const yourAvgS = yourD.reduce((a,c) => a+c.s,0)/yourD.length;
+                      const theirAvgS = theirD.reduce((a,c) => a+c.s,0)/theirD.length;
+                      if (Math.abs(yourAvgS - theirAvgS) > 15) lines.push(yourAvgS > theirAvgS ? 'Your current palette is more saturated — bolder and more energetic.' : `"${compareSlot.name}" is more saturated — more visual punch.`);
+                      lines.push(`Current: ${colors.length} colours. Saved: ${compareColors.length} colours.`);
+                      return lines.map((t,i) => <li key={i}>{t}</li>);
+                    })()}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   /* ── no competitor yet: show upload zone ────────────────────────────────── */
   if (!competitorImage || competitorColors.length === 0) {
     return (
-      <div className="card">
+      <div>
+        {pillNav}
+        <div className="card">
         <div
           onDrop={onDrop}
           onDragOver={onDragOver}
@@ -327,6 +422,7 @@ export default function CompetitorTab({ colors }) {
           </div>
         </div>
       </div>
+      </div>
     );
   }
 
@@ -338,6 +434,8 @@ export default function CompetitorTab({ colors }) {
   const insights  = generateInsights(yourData, compData, yourScore, compScore);
 
   return (
+    <div>
+    {pillNav}
     <div className="card">
       {/* side-by-side */}
       <div className="ps-side-by-side" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 28, marginBottom: 28 }}>
@@ -398,6 +496,7 @@ export default function CompetitorTab({ colors }) {
           Upload a different image
         </button>
       </div>
+    </div>
     </div>
   );
 }

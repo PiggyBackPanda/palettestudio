@@ -13,6 +13,7 @@ import { hexToRgb, rgbToHsl } from '../utils/colourMath';
 import { ROLE_COL, ROLE_DESC } from '../utils/autoRoles';
 import { getColourName } from '../utils/colourNames';
 import ExportTokensTab from './ExportTokensTab';
+import PlatformExportSection from './PlatformExportSection';
 
 // ─── Shared colour-data helper ────────────────────────────────────────────────
 // All values derived from existing utils — no duplicated math.
@@ -1028,6 +1029,11 @@ export default function ExportTab({ colors, roles, issues, score, scales, select
       {/* ── Design Tokens section ──────────────────────────────────────── */}
       <div style={{ marginTop: 8 }}>
         <ExportTokensTab colors={colors} roles={roles} selectedFont={selectedFont} />
+      </div>
+
+      {/* ── Platform-specific export guides ────────────────────────────── */}
+      <div style={{ marginTop: 8 }}>
+        <PlatformExportSection colors={colors} roles={roles} />
       </div>
 
     </div>

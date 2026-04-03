@@ -5,10 +5,11 @@ export const TABS = [
   { key: 'colours',    label: 'Colours' },
   { key: 'roles',      label: 'Roles' },
   { key: 'typography', label: 'Typography' },
+  { key: 'variations', label: 'Variations' },
   { key: 'mockups',    label: 'Templates' },
   { key: 'export',     label: 'Export' },
   { key: 'guide',      label: 'Brand Guide' },
-  { key: 'competitor', label: 'Competitor' },
+  { key: 'compare',    label: 'Compare' },
 ];
 
 export const FONT_PAIRS = [

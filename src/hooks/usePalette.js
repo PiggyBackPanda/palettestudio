@@ -284,6 +284,16 @@ export function usePalette() {
     setFromImage(false);
   };
 
+  const applyPalette = (newColors, newRoles) => {
+    const r = newRoles || {};
+    pushHistory(newColors, r);
+    setColors(newColors);
+    setRolesState(r);
+    setAutoReasons({});
+    setFixedCodes(new Set());
+    setFromImage(false);
+  };
+
   return {
     // State
     colors,
@@ -320,5 +330,6 @@ export function usePalette() {
     generateRandomPalette,
     loadPreset,
     loadFromURL,
+    applyPalette,
   };
 }

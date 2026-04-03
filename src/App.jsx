@@ -17,6 +17,7 @@ import RolesTab        from './tabs/RolesTab';
 import TypographyTab   from './tabs/TypographyTab';
 import MockupsTab      from './tabs/MockupsTab';
 import ExportTab       from './tabs/ExportTab';
+import VariationsTab   from './tabs/VariationsTab';
 import BrandGuideTab   from './tabs/BrandGuideTab';
 import CompetitorTab   from './tabs/CompetitorTab';
 
@@ -38,7 +39,7 @@ export default function App() {
     setRole, chooseForMe, clearRoles, applyFix,
     saveSlot, loadSlot, deleteSlot, renameSlot,
     generateRandomPalette, loadPreset,
-    undo, redo, canUndo, canRedo, loadFromURL,
+    undo, redo, canUndo, canRedo, loadFromURL, applyPalette,
   } = palette;
 
   useEffect(() => {
@@ -118,10 +119,19 @@ export default function App() {
                 )}
               </button>
               {sharePopupUrl && (
-                <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: 'var(--ps-bg-surface)', border: '1px solid var(--ps-border)', borderRadius: 'var(--ps-radius-md)', padding: '8px 10px', boxShadow: 'var(--ps-shadow-md)', zIndex: 200, minWidth: 280 }}>
-                  <p style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-xs)', color: 'var(--ps-text-tertiary)', marginBottom: 6 }}>Copy this link manually:</p>
-                  <input readOnly value={sharePopupUrl} onClick={e => e.target.select()} style={{ width: '100%', fontFamily: 'var(--ps-font-mono)', fontSize: 'var(--ps-text-xs)', border: '1px solid var(--ps-border)', borderRadius: 'var(--ps-radius-sm)', padding: '4px 8px', color: 'var(--ps-text-primary)', background: 'var(--ps-bg-subtle)', outline: 'none' }} />
-                  <button onClick={() => setSharePopupUrl(null)} style={{ marginTop: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-xs)', color: 'var(--ps-text-tertiary)', padding: 0 }}>Dismiss</button>
+                <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: 'var(--ps-bg-surface)', border: '1px solid var(--ps-border)', borderRadius: 'var(--ps-radius-lg)', padding: '14px 16px', boxShadow: 'var(--ps-shadow-lg)', zIndex: 200, minWidth: 300 }}>
+                  <div style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-sm)', fontWeight: 600, color: 'var(--ps-text-primary)', marginBottom: 8 }}>Share your palette</div>
+                  <div style={{ display: 'flex', gap: 0, borderRadius: 'var(--ps-radius-md)', overflow: 'hidden', marginBottom: 10, border: '1px solid var(--ps-border)' }}>
+                    {colors.map((hex, i) => <div key={i} style={{ flex: 1, height: 24, background: hex }} />)}
+                  </div>
+                  <p style={{ fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-xs)', color: 'var(--ps-text-tertiary)', marginBottom: 8, lineHeight: 1.5 }}>
+                    Anyone with this link will see your {colors.length} colours{Object.keys(roles).length > 0 ? ' and assigned roles' : ''}.
+                  </p>
+                  <input readOnly value={sharePopupUrl} onClick={e => e.target.select()} style={{ width: '100%', fontFamily: 'var(--ps-font-mono)', fontSize: 'var(--ps-text-xs)', border: '1px solid var(--ps-border)', borderRadius: 'var(--ps-radius-sm)', padding: '6px 8px', color: 'var(--ps-text-primary)', background: 'var(--ps-bg-subtle)', outline: 'none', marginBottom: 8 }} />
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
+                    <button onClick={() => { navigator.clipboard.writeText(sharePopupUrl).then(() => { setShareCopied(true); setSharePopupUrl(null); setTimeout(() => setShareCopied(false), 2000); }).catch(() => {}); }} style={{ background: 'var(--ps-accent)', color: 'var(--ps-accent-text)', border: 'none', borderRadius: 'var(--ps-radius-md)', padding: '6px 14px', fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-xs)', fontWeight: 500, cursor: 'pointer' }}>Copy link</button>
+                    <button onClick={() => setSharePopupUrl(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--ps-font-ui)', fontSize: 'var(--ps-text-xs)', color: 'var(--ps-text-tertiary)', padding: 0 }}>Dismiss</button>
+                  </div>
                 </div>
               )}
             </div>
@@ -178,13 +188,14 @@ export default function App() {
         </div>
 
         {tab === 'diagnose' && <DiagnoseTab issues={issues} colors={colors} fixedCodes={fixedCodes} fromImage={fromImage} warnCount={warnCount} onFix={applyFix} cvdType={cvdType} setCvdType={setCvdType} />}
-        {tab === 'colours' && <ColoursTab suggestions={suggestions} colors={colors} roles={roles} scales={scales} onAdd={addColor} onLoadPreset={loadPreset} />}
+        {tab === 'colours' && <ColoursTab suggestions={suggestions} colors={colors} roles={roles} scales={scales} onAdd={addColor} onLoadPreset={loadPreset} onApplyPalette={applyPalette} />}
         {tab === 'roles' && <RolesTab colors={colors} roles={roles} autoReasons={autoReasons} onSetRole={setRole} onChooseForMe={chooseForMe} onClearRoles={clearRoles} />}
         {tab === 'typography' && <TypographyTab colors={colors} roles={roles} selectedFont={selectedFont} onSelectFont={setSelectedFont} />}
+        {tab === 'variations' && <VariationsTab colors={colors} roles={roles} onApplyPalette={applyPalette} />}
         {tab === 'mockups' && <MockupsTab roles={roles} colors={colors} onNavigate={setTab} selectedFont={selectedFont} />}
         {tab === 'export' && <ExportTab colors={colors} roles={roles} score={score} issues={issues} scales={scales} selectedFont={selectedFont} />}
         {tab === 'guide' && <BrandGuideTab colors={colors} roles={roles} selectedFont={selectedFont} />}
-        {tab === 'competitor' && <CompetitorTab colors={colors} />}
+        {tab === 'compare' && <CompetitorTab colors={colors} savedSlots={savedSlots} />}
       </main>
 
       <WelcomeModal onClose={() => {}} onLoadExample={() => loadPreset(PRESETS[0])} />

@@ -2,14 +2,16 @@ import { useState } from 'react';
 import AddColoursTab from './AddColoursTab';
 import ColourNamesTab from './ColourNamesTab';
 import ColourScalesTab from './ColourScalesTab';
+import BuildAroundSection from './BuildAroundSection';
 
 const SECTIONS = [
   { key: 'add', label: 'Add' },
+  { key: 'build', label: 'Build Around' },
   { key: 'names', label: 'Names' },
   { key: 'scales', label: 'Scales' },
 ];
 
-export default function ColoursTab({ suggestions, colors, roles, scales, onAdd, onLoadPreset }) {
+export default function ColoursTab({ suggestions, colors, roles, scales, onAdd, onLoadPreset, onApplyPalette }) {
   const [section, setSection] = useState('add');
 
   return (
@@ -39,6 +41,7 @@ export default function ColoursTab({ suggestions, colors, roles, scales, onAdd, 
       </div>
 
       {section === 'add' && <AddColoursTab suggestions={suggestions} colors={colors} onAdd={onAdd} onLoadPreset={onLoadPreset} />}
+      {section === 'build' && <BuildAroundSection colors={colors} onApplyPalette={onApplyPalette} />}
       {section === 'names' && <ColourNamesTab colors={colors} />}
       {section === 'scales' && <ColourScalesTab colors={colors} roles={roles} scales={scales} />}
     </div>
