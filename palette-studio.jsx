@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 
 // Colour Math ───────────────────────────────────────────────
 function hexToRgb(hex) {
@@ -1307,9 +1307,9 @@ export default function PaletteFixer() {
     });
   };
 
-  const issues   = diagnose(colors);
-  const score    = healthScore(issues);
-  const suggs    = makeSuggestions(colors);
+  const issues   = useMemo(() => diagnose(colors), [colors]);
+  const score    = useMemo(() => healthScore(issues), [issues]);
+  const suggs    = useMemo(() => makeSuggestions(colors), [colors]);
   const warnCount = issues.filter(i => i.type === "warning" || i.type === "critical").length;
 
   const addColor  = hex => { if (colors.length < 8 && !colors.includes(hex)) setColors(c => [...c, hex]); };
@@ -1371,15 +1371,15 @@ export default function PaletteFixer() {
     // Derive anchor hue from most-saturated locked colour, or pick a random hue
     let anchorHue;
     if (lockedHexes.length > 0) {
-      const best = lockedHexes.reduce((b, hex) => {
-        const {r,g,b} = hexToRgb(hex);
-        const {s} = rgbToHsl(r,g,b);
-        const {r:br,g:bg,b:bb} = hexToRgb(b);
-        const {s:bs} = rgbToHsl(br,bg,bb);
-        return s > bs ? hex : b;
+      const best = lockedHexes.reduce((acc, hex) => {
+        const {r:cr,g:cg,b:cb} = hexToRgb(hex);
+        const {s} = rgbToHsl(cr,cg,cb);
+        const {r:ar,g:ag,b:ab} = hexToRgb(acc);
+        const {s:as} = rgbToHsl(ar,ag,ab);
+        return s > as ? hex : acc;
       }, lockedHexes[0]);
-      const {r,g,b} = hexToRgb(best);
-      anchorHue = rgbToHsl(r,g,b).h;
+      const {r:br,g:bg,b:bb} = hexToRgb(best);
+      anchorHue = rgbToHsl(br,bg,bb).h;
     } else {
       anchorHue = Math.random() * 360;
     }
@@ -2658,17 +2658,28 @@ export default function PaletteFixer() {
           const code = activeFormat.gen();
 
           const syntaxHighlight = (text) => {
-            // Simple syntax colouring for the code block
-            return text.split("\n").map((line, i) => {
-              let styled = line
-                .replace(/(--[\w-]+)/g, '<span style="color:#b8703a">$1</span>')
-                .replace(/(#[0-9a-fA-F]{3,8})/g, '<span style="color:#2a7a7a">$1</span>')
-                .replace(/("[\w-]+")\s*:/g, '<span style="color:#b8703a">$1</span>:')
-                .replace(/(\/\/.*$|\/\*.*?\*\/)/g, '<span style="color:#aaa">$1</span>')
-                .replace(/\b(var)\(/g, '<span style="color:#606aa0">var</span>(')
-                .replace(/\b(module\.exports|:root)\b/g, '<span style="color:#606aa0">$1</span>');
-              return '<div key="' + i + '">' + styled + '</div>';
-            }).join("");
+            // Safe React-element syntax colouring — no dangerouslySetInnerHTML needed
+            const colorize = (line) => {
+              const tokens = [];
+              const regex = /(--[\w-]+)|(#[0-9a-fA-F]{3,8})|("[\w-]+")\s*:|(\/\/.*$|\/\*.*?\*\/)|\b(var)\(|\b(module\.exports|:root)\b/g;
+              let last = 0, m;
+              while ((m = regex.exec(line)) !== null) {
+                if (m.index > last) tokens.push({ text: line.slice(last, m.index), col: null });
+                if (m[1]) tokens.push({ text: m[1], col: "#b8703a" });
+                else if (m[2]) tokens.push({ text: m[2], col: "#2a7a7a" });
+                else if (m[3]) tokens.push({ text: m[3] + ":", col: "#b8703a" });
+                else if (m[4]) tokens.push({ text: m[4], col: "#aaa" });
+                else if (m[5]) tokens.push({ text: "var(", col: "#606aa0" });
+                else if (m[6]) tokens.push({ text: m[6], col: "#606aa0" });
+                last = regex.lastIndex;
+              }
+              if (last < line.length) tokens.push({ text: line.slice(last), col: null });
+              return tokens;
+            };
+            return text.split("\n").map((line, i) => ({
+              key: i,
+              tokens: colorize(line)
+            }));
           };
 
           const handleCopy = () => copyToClipboard(code, "tokens-copied");
@@ -2721,7 +2732,15 @@ export default function PaletteFixer() {
                   background:"#1a1a2e", color:"#e8e0d4", padding:"20px 18px",
                   borderRadius:8, fontSize:10, lineHeight:1.7, overflowX:"auto",
                   fontFamily:"'DM Mono', monospace", margin:0
-                }} dangerouslySetInnerHTML={{ __html: syntaxHighlight(code) }} />
+                }}>
+                  {syntaxHighlight(code).map(line => (
+                    <div key={line.key}>
+                      {line.tokens.map((t, j) =>
+                        t.col ? <span key={j} style={{ color: t.col }}>{t.text}</span> : t.text
+                      )}
+                    </div>
+                  ))}
+                </pre>
               </div>
             </div>
           );
@@ -2967,6 +2986,7 @@ export default function PaletteFixer() {
           const processCompFile = async (file) => {
             if (!file || !file.type.startsWith("image/")) return;
             setCompExtracting(true);
+            if (competitorImage) URL.revokeObjectURL(competitorImage);
             setCompetitorImage(URL.createObjectURL(file));
             try {
               const cols = await extractColorsFromImage(file, 10);
