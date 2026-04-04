@@ -50,9 +50,11 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
 
+    integrations:
+      app_store_connect: Codemagic  # Name of the API key integration set up in Codemagic UI
+
     publishing:
       app_store_connect:
-        # Credentials set in Codemagic UI dashboard
         auth: integration
         submit_to_testflight: true
         submit_to_app_store: false  # Set to true when ready for production
