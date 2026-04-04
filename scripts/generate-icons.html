@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head><title>Palette Studio — Icon Generator</title></head>
+<body style="font-family: system-ui; padding: 40px; background: #f4f3f0;">
+  <h1>Palette Studio Icon Generator</h1>
+  <p>Click each button to download the icon at that size. You need these for the App Store:</p>
+  <div id="buttons" style="display: flex; gap: 12px; flex-wrap: wrap; margin: 24px 0;"></div>
+  <canvas id="canvas" style="border: 1px solid #ccc; border-radius: 12px;"></canvas>
+
+  <script>
+    const SIZES = [
+      { name: 'icon-1024.png', size: 1024, label: '1024×1024 (App Store)' },
+      { name: 'icon-512.png',  size: 512,  label: '512×512 (PWA)' },
+      { name: 'icon-192.png',  size: 192,  label: '192×192 (PWA)' },
+      { name: 'icon-180.png',  size: 180,  label: '180×180 (Apple Touch)' },
+      { name: 'icon-167.png',  size: 167,  label: '167×167 (iPad Pro)' },
+      { name: 'icon-152.png',  size: 152,  label: '152×152 (iPad)' },
+      { name: 'icon-120.png',  size: 120,  label: '120×120 (iPhone)' },
+    ];
+
+    function drawIcon(ctx, size) {
+      const r = size * 0.22; // corner radius (iOS style)
+
+      // Background
+      ctx.fillStyle = '#4F46E5';
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(size - r, 0);
+      ctx.quadraticCurveTo(size, 0, size, r);
+      ctx.lineTo(size, size - r);
+      ctx.quadraticCurveTo(size, size, size - r, size);
+      ctx.lineTo(r, size);
+      ctx.quadraticCurveTo(0, size, 0, size - r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.fill();
+
+      // Subtle gradient overlay
+      const grad = ctx.createLinearGradient(0, 0, size, size);
+      grad.addColorStop(0, 'rgba(255,255,255,0.08)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.08)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // "PS" text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = `700 ${size * 0.42}px system-ui, -apple-system, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('PS', size / 2, size / 2 + size * 0.02);
+
+      // Small palette dots
+      const dotY = size * 0.78;
+      const dotR = size * 0.022;
+      const colors = ['#F59E0B', '#10B981', '#F472B6', '#38BDF8'];
+      const spacing = size * 0.06;
+      const startX = size / 2 - (colors.length - 1) * spacing / 2;
+      colors.forEach((c, i) => {
+        ctx.fillStyle = c;
+        ctx.beginPath();
+        ctx.arc(startX + i * spacing, dotY, dotR, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Draw preview at 512
+    canvas.width = 512;
+    canvas.height = 512;
+    drawIcon(ctx, 512);
+
+    // Generate download buttons
+    const container = document.getElementById('buttons');
+    SIZES.forEach(({ name, size, label }) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.style.cssText = 'padding: 10px 18px; background: #4F46E5; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;';
+      btn.onclick = () => {
+        const c = document.createElement('canvas');
+        c.width = size;
+        c.height = size;
+        drawIcon(c.getContext('2d'), size);
+        const link = document.createElement('a');
+        link.download = name;
+        link.href = c.toDataURL('image/png');
+        link.click();
+      };
+      container.appendChild(btn);
+    });
+  </script>
+</body>
+</html>
